@@ -111,9 +111,9 @@ class MatrixGPT:
                             self.messages[room_id][sender].clear()
                             await self.persona(room_id, sender, self.personality)
                     try:
-                        await self.send_message(room_id, f"Bot has been reset to {self.personality} for {sender_display}")
+                        await self.send_message(room_id, f"Bot has been reset to default for {sender_display}")
                     except:
-                        await self.send_message(room_id, f"Bot has been reset to {self.personality} for {sender}")
+                        await self.send_message(room_id, f"Bot has been reset to default for {sender}")
 
                 # Stock settings, no personality        
                 if message.startswith(".stock"):
