@@ -37,11 +37,7 @@ class MatrixGPT:
 
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
-        # optional terminal logging
-        # print(
-        #     f"Message received in room {room.display_name}\n"
-        #     f"{room.user_name(event.sender)} | {event.body} | {event.server_timestamp}")
-        
+       
         # Main bot functionality
         if isinstance(event, RoomMessageText):
             # assign parts of event to variables
