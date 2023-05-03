@@ -168,9 +168,13 @@ f'''{self.bot_id}, an OpenAI chatbot.
         if channel in self.messages:
             if sender in self.messages[channel]: #if this user exists in the history dictionary
                 self.messages[channel][sender].append({"role": role, "content": message}) #add the message
-        
+            else:
+                self.messages[channel][sender] = [
+                    {"role": "system", "content": "assume the personality of " + self.personality + ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short."},
+                    {"role": role, "content": message}]
         else:
             self.messages[channel]= {}
+            self.messages[channel][sender] = {}
             if role == "system":
                 self.messages[channel][sender] = [{"role": role, "content": message}]
             else: #add personality to the new user entry
