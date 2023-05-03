@@ -3,6 +3,9 @@ Infinibot is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protoc
 
 This is a rewrite of my project, [jerkbot-matrix](https://github.com/h1ddenpr0cess20/jerkbot-matrix/), using matrix-nio instead of matrix-client.  That version was plagued with connectivity errors and limitations.  This version can connect to multiple channels and will have the ability to be invited in a future release.  It also has a friendlier name and default personality setting, though I'm pretty fond of the jerk personality.  Change the personality to whatever suits you. 
 
+Also available for IRC at [infinibot-irc](https://github.com/h1ddenpr0cess20/infinibot-irc/)
+
+
 ## Installation
 
 ```
