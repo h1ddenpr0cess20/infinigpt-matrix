@@ -107,8 +107,7 @@ class MatrixGPT:
             pass
         personality = self.prompt[0] + persona + self.prompt[1]
         await self.add_history("system", channel, sender, personality) #add to the message history
-    
-        
+      
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
        
@@ -164,7 +163,6 @@ class MatrixGPT:
                             await self.add_history("user", room_id, name_id, message)
                             await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
 
-
                 #change personality    
                 if message.startswith(".persona "):
                     message = message.lstrip(".persona")
@@ -196,7 +194,12 @@ class MatrixGPT:
                     message = message.strip()
                     
                     if message in secret:
-                        self.messages[room_id][sender].clear()
+                        if room_id in self.messages:
+                            if sender in self.messages[room_id]:
+                                self.messages[room_id][sender].clear()
+                            else:
+                                self.messages[room_id][sender] = {}
+                        
                         await self.add_history("system", room_id, sender, secret[message])
                         await self.respond(room_id, sender, self.messages[room_id][sender])
                 
