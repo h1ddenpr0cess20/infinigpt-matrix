@@ -19,7 +19,7 @@ Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need th
 Plug those into the appropriate variables in the launcher.py file.
 
 ```
-python3 infinibot.py
+python3 launcher.py
 ```
 
 ## Use
