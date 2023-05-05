@@ -6,7 +6,7 @@ This is a rewrite of my project, [jerkbot-matrix](https://github.com/h1ddenpr0ce
 Also available for IRC at [infinibot-irc](https://github.com/h1ddenpr0cess20/infinibot-irc/)
 
 
-## Installation
+## Setup
 
 ```
 pip3 install matrix-nio openai
@@ -16,7 +16,7 @@ Get an [OpenAI API](https://platform.openai.com/signup) key
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.
 
-Plug those things into the appropriate variables in the infinibot.py file.
+Plug those into the appropriate variables in the launcher.py file.
 
 ```
 python3 infinibot.py

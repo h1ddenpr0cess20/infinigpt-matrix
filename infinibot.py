@@ -26,26 +26,16 @@ class MatrixGPT:
         
         # store chat history
         self.messages = {}
-        
-    # get the display name for a user
-    async def display_name(self, user):
-        try:
-            name = await self.client.get_displayname(user)
-            return name.displayname
-        except Exception as e:
-            print(f"Error: {e}")
-
+        self.prompt = ("assume the personality of ", ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short.")
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
        
         # Main bot functionality
         if isinstance(event, RoomMessageText):
             # assign parts of event to variables
-
             # convert timestamp
             message_time = event.server_timestamp / 1000
             message_time = datetime.datetime.fromtimestamp(message_time)
-
             message = event.body
             sender = event.sender
             sender_display = await self.display_name(sender)
@@ -64,7 +54,7 @@ class MatrixGPT:
                     # check if it violates ToS
                     flagged = await self.moderate(message)
                     if flagged:
-                        await self.send_message(room_id, "This message violates the OpenAI usage policy and was not sent.")
+                        await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
                     else:
                         await self.add_history("user", room_id, sender, message)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
@@ -87,7 +77,7 @@ class MatrixGPT:
                                 name_id = disp_name
                         flagged = await self.moderate(message)
                         if flagged:
-                            await self.send_message(room_id, "This message violates the OpenAI usage policy and was not sent.")
+                            await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
                         else:
                             await self.add_history("user", room_id, name_id, message)
                             await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
@@ -99,7 +89,7 @@ class MatrixGPT:
                     message = message.strip()
                     flagged = await self.moderate(message)
                     if flagged:
-                            await self.send_message(room_id, "This persona violates the OpenAI usage policy and has been rejected.  Choose a new persona.")
+                            await self.send_message(room_id, f"{sender_display}: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
                     else:
                         await self.persona(room_id, sender, message)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
@@ -111,9 +101,9 @@ class MatrixGPT:
                             self.messages[room_id][sender].clear()
                             await self.persona(room_id, sender, self.personality)
                     try:
-                        await self.send_message(room_id, f"Bot has been reset to default for {sender_display}")
+                        await self.send_message(room_id, f"{self.bot_id} reset to default for {sender_display}")
                     except:
-                        await self.send_message(room_id, f"Bot has been reset to default for {sender}")
+                        await self.send_message(room_id, f"{self.bot_id} reset to default for {sender}")
 
                 # Stock settings, no personality        
                 if message.startswith(".stock"):
@@ -152,8 +142,17 @@ f'''{self.bot_id}, an OpenAI chatbot.
     
 .stock
     Remove personality and reset to standard GPT settings
-    
+
+Available at https://github.com/h1ddenpr0cess20/infinibot-matrix    
 ''')
+
+    # get the display name for a user
+    async def display_name(self, user):
+        try:
+            name = await self.client.get_displayname(user)
+            return name.displayname
+        except Exception as e:
+            print(e)
 
     # simplifies sending messages to the channel            
     async def send_message(self, channel, message):
@@ -163,6 +162,14 @@ f'''{self.bot_id}, an OpenAI chatbot.
             content={"msgtype": "m.text", "body": message},
         )
 
+    # run message through moderation endpoint
+    async def moderate(self, message):
+        flagged = False
+        if not flagged:
+            moderate = openai.Moderation.create(input=message) 
+            flagged = moderate["results"][0]["flagged"] #true or false
+        return flagged
+
     # add messages to the history dictionary
     async def add_history(self, role, channel, sender, message):
         if channel in self.messages:
@@ -170,7 +177,7 @@ f'''{self.bot_id}, an OpenAI chatbot.
                 self.messages[channel][sender].append({"role": role, "content": message}) #add the message
             else:
                 self.messages[channel][sender] = [
-                    {"role": "system", "content": "assume the personality of " + self.personality + ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short."},
+                    {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
                     {"role": role, "content": message}]
         else:
             self.messages[channel]= {}
@@ -179,7 +186,7 @@ f'''{self.bot_id}, an OpenAI chatbot.
                 self.messages[channel][sender] = [{"role": role, "content": message}]
             else: #add personality to the new user entry
                 self.messages[channel][sender] = [
-                    {"role": "system", "content": "assume the personality of " + self.personality + ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short."},
+                    {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
                     {"role": role, "content": message}]
 
     # create GPT response
@@ -201,19 +208,11 @@ f'''{self.bot_id}, an OpenAI chatbot.
             #Send response to channel
             try:
                 await self.send_message(channel, response_text)
-            except Exception as e: #fix?
+            except Exception as e: 
                 print(e)
             #Shrink history list for token size management (also prevents rate limit error)
             if len(self.messages[channel][sender]) > 14:
                 del self.messages[channel][sender][1:3]  #delete the first set of question and answers 
-
-    # run message through moderation endpoint
-    async def moderate(self, message):
-        flagged = False
-        if not flagged:
-            moderate = openai.Moderation.create(input=message) 
-            flagged = moderate["results"][0]["flagged"] #true or false
-        return flagged
 
     # change the personality of the bot
     async def persona(self, channel, sender, persona):
@@ -221,7 +220,7 @@ f'''{self.bot_id}, an OpenAI chatbot.
             await self.messages[channel][sender].clear()
         except:
             pass
-        personality = "assume the personality of " + persona + ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short."
+        personality = self.prompt[0] + persona + self.prompt[1]
         await self.add_history("system", channel, sender, personality) #add to the message history
 
     # main loop
@@ -253,12 +252,12 @@ if __name__ == "__main__":
     server = "https://matrix.org" #change if using different homeserver
     username = "@USERNAME:SERVER.TLD" 
     password = "PASSWORD"
-    channels = ["#channel1:SERVER.TLD", "#channel2:SERVER.TLD", "#channel3:SERVER.TLD", "#channel4:SERVER.TLD", ] #enter the channels you want it to join here
+    channels = ["#channel1:SERVER.TLD", "#channel2:SERVER.TLD", "#channel3:SERVER.TLD", "!ExAmPleOfApRivAtErOoM:SERVER.TLD", ] #enter the channels you want it to join here
     personality = "an AI that goes above and beyond, named InfiniBot" #change to whatever suits your needs
     
     # create bot instance
-    bot = MatrixGPT(server, username, password, channels, personality)
+    infinibot = MatrixGPT(server, username, password, channels, personality)
     
     # run main function loop
-    asyncio.get_event_loop().run_until_complete(bot.main())
+    asyncio.get_event_loop().run_until_complete(infinibot.main())
 
