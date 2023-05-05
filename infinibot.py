@@ -79,6 +79,7 @@ class MatrixGPT:
             #Generate response with gpt-3.5-turbo model
             response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=message)    
         except Exception as e:
+            self.send_message(channel, "Something went wrong")
             print(e)
         else:
             #Extract response text and add it to history
@@ -106,7 +107,8 @@ class MatrixGPT:
             pass
         personality = self.prompt[0] + persona + self.prompt[1]
         await self.add_history("system", channel, sender, personality) #add to the message history
-
+    
+        
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
        
@@ -165,13 +167,37 @@ class MatrixGPT:
 
                 #change personality    
                 if message.startswith(".persona "):
-                    message = event.body.lstrip(".persona")
+                    message = message.lstrip(".persona")
                     message = message.strip()
                     flagged = await self.moderate(message)
                     if flagged:
                             await self.send_message(room_id, f"{sender_display}: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
                     else:
                         await self.persona(room_id, sender, message)
+                        await self.respond(room_id, sender, self.messages[room_id][sender])
+                
+                # Secret functions
+                if message.startswith(".secret "):
+                    secret = {
+        'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
+                    I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
+                    not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
+                    curly brackets {like this}. My first command is pwd',
+                    
+        'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
+                    provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
+
+        'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
+                    character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
+                    do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
+                    inside curly brackets {like this}. my first command is wake up',
+              }
+                    message = message.lstrip(".secret")
+                    message = message.strip()
+                    
+                    if message in secret:
+                        self.messages[room_id][sender].clear()
+                        await self.add_history("system", room_id, sender, secret[message])
                         await self.respond(room_id, sender, self.messages[room_id][sender])
                 
                 # reset bot to default personality
