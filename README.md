@@ -1,7 +1,7 @@
 # infinibot-matrix
 Infinibot is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protocol. It has a great prompt which allows it to roleplay as almost anything you can think of. You can set any default personality you would like. It can be changed at any time, and each user has their own separate chat history with their chosen personality setting. Users can interact with each others chat histories for collaboration if they would like, but otherwise, conversations are separated, per channel, per user.  
 
-This is a rewrite of my project, [jerkbot-matrix](https://github.com/h1ddenpr0cess20/jerkbot-matrix/), using matrix-nio instead of matrix-client.  That version was plagued with connectivity errors and limitations.  This version can connect to multiple channels and will have the ability to be invited in a future release.  It also has a friendlier name and default personality setting, though I'm pretty fond of the jerk personality.  Change the personality to whatever suits you. 
+There is usually an instance running at [#infinibot:matrix.org](https://matrix.to/#/#infinibot:matrix.org) if you would like to try it out.
 
 Also available for IRC at [infinibot-irc](https://github.com/h1ddenpr0cess20/infinibot-irc/)
 
