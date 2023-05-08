@@ -79,7 +79,7 @@ class MatrixGPT:
             #Generate response with gpt-3.5-turbo model
             response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=message)    
         except Exception as e:
-            self.send_message(channel, "Something went wrong")
+            await self.send_message(channel, "Something went wrong")
             print(e)
         else:
             #Extract response text and add it to history
@@ -260,9 +260,6 @@ Available at https://github.com/h1ddenpr0cess20/infinibot-matrix
         # Login, print "Logged in as @alice:example.org device id: RANDOMDID"
         print(await self.client.login(self.password))
 
-        # start listening for messages
-        self.client.add_event_callback(self.message_callback, RoomMessageText)
-        
         # get account display name
         self.bot_id = await self.display_name(self.username)
         
@@ -275,6 +272,8 @@ Available at https://github.com/h1ddenpr0cess20/infinibot-matrix
             except:
                 print(f"Couldn't join {channel}")
         
+        # start listening for messages
+        self.client.add_event_callback(self.message_callback, RoomMessageText)
                      
         await self.client.sync_forever(timeout=30000)  # milliseconds
 
