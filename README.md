@@ -42,3 +42,6 @@ python3 launcher.py
     
 **.stock**
     Remove personality and reset to standard GPT settings
+    
+**.help**
+    Show the built-in help menu
