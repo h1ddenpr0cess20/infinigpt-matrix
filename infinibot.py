@@ -1,5 +1,7 @@
 """
-Infinibot: An OpenAI chatbot for the Matrix chat protocol with infinite personalities
+Infinibot: An OpenAI chatbot for the Matrix chat protocol with infinite personalities.
+Forget those silly paragraph long prompts you see floating around.
+This bot can do it all with a simple prompt, written by me.
 
 
 Author: Dustin Whyte
@@ -82,8 +84,14 @@ class MatrixGPT:
             await self.send_message(channel, "Something went wrong")
             print(e)
         else:
-            #Extract response text and add it to history
+            #Extract response text
             response_text = response['choices'][0]['message']['content']
+            
+            #check for unwanted quotation marks around response and remove them
+            if response_text.startswith('"') and response_text.endswith('"'):
+                response_text = response_text.strip('"')
+
+            #add to history
             await self.add_history("assistant", channel, sender, response_text)
             if sender2: #if the .x function was used
                 display_name = await self.display_name(sender2)
@@ -106,7 +114,7 @@ class MatrixGPT:
         except:
             pass
         personality = self.prompt[0] + persona + self.prompt[1]
-        await self.add_history("system", channel, sender, personality) #add to the message history
+        await self.add_history("system", channel, sender, personality) 
       
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
