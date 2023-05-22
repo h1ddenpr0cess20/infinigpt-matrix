@@ -3,6 +3,7 @@ Infinibot: An OpenAI chatbot for the Matrix chat protocol with infinite personal
 Forget those silly paragraph long prompts you see floating around.
 This bot can do it all with a simple prompt, written by me.
 
+aka InfiniGPT (might change the project name to this)
 
 Author: Dustin Whyte
 Date: May 2023
@@ -52,8 +53,11 @@ class MatrixGPT:
     async def moderate(self, message):
         flagged = False
         if not flagged:
-            moderate = openai.Moderation.create(input=message) 
-            flagged = moderate["results"][0]["flagged"] #true or false
+            try:
+                moderate = openai.Moderation.create(input=message,) #run through the moderation endpoint
+                flagged = moderate["results"][0]["flagged"] #true or false
+            except:
+                pass
         return flagged
 
     # add messages to the history dictionary
@@ -144,6 +148,8 @@ class MatrixGPT:
                     flagged = await self.moderate(message)
                     if flagged:
                         await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
+                        #add a way to penalize repeated violations here, maybe ignore for x amount of time after three violations
+
                     else:
                         await self.add_history("user", room_id, sender, message)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
@@ -298,7 +304,7 @@ if __name__ == "__main__":
                 "#channel3:SERVER.TLD", 
                 "!ExAmPleOfApRivAtErOoM:SERVER.TLD", ] #enter the channels you want it to join here
     
-    personality = "an AI that goes above and beyond, named InfiniBot" #change to whatever suits your needs
+    personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
     
     # create bot instance
     infinibot = MatrixGPT(server, username, password, channels, personality)

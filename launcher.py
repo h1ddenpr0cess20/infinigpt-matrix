@@ -13,7 +13,7 @@ channels = ["#channel1:SERVER.TLD",
             "#channel3:SERVER.TLD", 
             "!ExAmPleOfApRivAtErOoM:SERVER.TLD", ] #enter the channels you want it to join here
 
-personality = "an AI that goes above and beyond, named InfiniBot" #change to whatever suits your needs
+personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
 
 # create bot instance
 infinibot = infinibot.MatrixGPT(server, username, password, channels, personality)
