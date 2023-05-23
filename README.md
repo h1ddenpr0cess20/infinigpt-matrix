@@ -1,7 +1,7 @@
-# infinibot-matrix
-Infinibot is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protocol. It has a great prompt which allows it to roleplay as almost anything you can think of. You can set any default personality you would like. It can be changed at any time, and each user has their own separate chat history with their chosen personality setting. Users can interact with each others chat histories for collaboration if they would like, but otherwise, conversations are separated, per channel, per user.  
+# infinigpt-matrix
+InfiniGPT is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protocol. It has a great prompt which allows it to roleplay as almost anything you can think of. You can set any default personality you would like. It can be changed at any time, and each user has their own separate chat history with their chosen personality setting. Users can interact with each others chat histories for collaboration if they would like, but otherwise, conversations are separated, per channel, per user.  
 
-Also available for IRC at [infinibot-irc](https://github.com/h1ddenpr0cess20/infinibot-irc/)
+Also available for IRC at [infinibot-irc](https://github.com/h1ddenpr0cess20/infinigpt-irc/)
 
 
 ## Setup

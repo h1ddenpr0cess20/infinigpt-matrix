@@ -1,9 +1,8 @@
 """
-Infinibot: An OpenAI chatbot for the Matrix chat protocol with infinite personalities.
+infiniGPT: An OpenAI chatbot for the Matrix chat protocol with infinite personalities.
 Forget those silly paragraph long prompts you see floating around.
 This bot can do it all with a simple prompt, written by me.
 
-aka InfiniGPT (might change the project name to this)
 
 Author: Dustin Whyte
 Date: May 2023
@@ -266,7 +265,7 @@ f'''{self.bot_id}, an OpenAI chatbot.
 .stock
     Remove personality and reset to standard GPT settings
 
-Available at https://github.com/h1ddenpr0cess20/infinibot-matrix    
+Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix    
 ''')
 
     # main loop
@@ -307,8 +306,8 @@ if __name__ == "__main__":
     personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
     
     # create bot instance
-    infinibot = MatrixGPT(server, username, password, channels, personality)
+    infinigpt = MatrixGPT(server, username, password, channels, personality)
     
     # run main function loop
-    asyncio.get_event_loop().run_until_complete(infinibot.main())
+    asyncio.get_event_loop().run_until_complete(infinigpt.main())
 
