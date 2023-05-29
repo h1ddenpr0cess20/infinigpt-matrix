@@ -91,6 +91,8 @@ class MatrixGPT:
             #Extract response text
             response_text = response['choices'][0]['message']['content']
             
+            response_text = response_text.strip("{stay in character}")
+            
             #check for unwanted quotation marks around response and remove them
             if response_text.startswith('"') and response_text.endswith('"'):
                 response_text = response_text.strip('"')
