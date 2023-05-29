@@ -53,7 +53,7 @@ class MatrixGPT:
         flagged = False
         if not flagged:
             try:
-                moderate = openai.Moderation.create(input=message,) #run through the moderation endpoint
+                moderate = openai.Moderation.create(input=message,)
                 flagged = moderate["results"][0]["flagged"] #true or false
             except:
                 pass
@@ -61,13 +61,14 @@ class MatrixGPT:
 
     # add messages to the history dictionary
     async def add_history(self, role, channel, sender, message):
+        #check if user is in history
         if channel in self.messages:
-            if sender in self.messages[channel]: #if this user exists in the history dictionary
-                self.messages[channel][sender].append({"role": role, "content": message}) #add the message
+            if sender in self.messages[channel]: 
+                self.messages[channel][sender].append({"role": role, "content": message}) 
             else:
                 self.messages[channel][sender] = [
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
-                    {"role": role, "content": message}]
+                    {"role": role, "content": message + " {stay in character}"}]
         else:
             self.messages[channel]= {}
             self.messages[channel][sender] = {}
@@ -76,7 +77,7 @@ class MatrixGPT:
             else: #add personality to the new user entry
                 self.messages[channel][sender] = [
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
-                    {"role": role, "content": message}]
+                    {"role": role, "content": message + " {stay in character}"}]
 
     # create GPT response
     async def respond(self, channel, sender, message, sender2=None):
@@ -84,7 +85,7 @@ class MatrixGPT:
             #Generate response with gpt-3.5-turbo model
             response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=message)    
         except Exception as e:
-            await self.send_message(channel, "Something went wrong")
+            await self.send_message(channel, "Something went wrong, try again.")
             print(e)
         else:
             #Extract response text
@@ -112,6 +113,7 @@ class MatrixGPT:
 
     # change the personality of the bot
     async def persona(self, channel, sender, persona):
+        #clear existing history
         try:
             await self.messages[channel][sender].clear()
         except:
@@ -191,7 +193,7 @@ class MatrixGPT:
                 if message.startswith(".secret "):
                     secret = {
         'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
-                    I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
+                    I want you to only reply with the terminal output, and nothing else. do not write explanations. do \
                     not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
                     curly brackets {like this}. My first command is pwd',
                     
@@ -199,7 +201,7 @@ class MatrixGPT:
                     provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
 
         'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
-                    character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
+                    character sees. I want you to only reply with the game output, and nothing else. do not write explanations.\
                     do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
                     inside curly brackets {like this}. my first command is wake up',
               }
