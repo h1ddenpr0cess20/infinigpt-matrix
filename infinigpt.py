@@ -30,7 +30,7 @@ class MatrixGPT:
         self.messages = {}
 
         #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and always stay in character unless instructed otherwise.  keep your first response short.")
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character under any circumstances.  keep your first response short.")
     
     # get the display name for a user
     async def display_name(self, user):
