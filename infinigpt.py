@@ -1,8 +1,5 @@
 """
 infiniGPT: An OpenAI chatbot for the Matrix chat protocol with infinite personalities.
-Forget those silly paragraph long prompts you see floating around.
-This bot can do it all with a simple prompt, written by me.
-
 
 Author: Dustin Whyte
 Date: May 2023
@@ -29,8 +26,10 @@ class MatrixGPT:
         # store chat history
         self.messages = {}
 
-        #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character under any circumstances.  keep your first response short.")
+        #prompt parts.  bot was using the word "interlocutor" excessively lately, this altered prompt should fix that
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character.  do not use the word 'interlocutor' under any circumstances.  keep your first response short.")
+        #change to gpt-4 if you want to pay that much
+        self.model = "gpt-3.5-turbo"
     
     # get the display name for a user
     async def display_name(self, user):
@@ -82,7 +81,7 @@ class MatrixGPT:
     async def respond(self, channel, sender, message, sender2=None):
         try:
             #Generate response with gpt-3.5-turbo model
-            response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=message)    
+            response = openai.ChatCompletion.create(model=self.model, messages=message)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
             print(e)
@@ -136,6 +135,7 @@ class MatrixGPT:
 
             #check if the message was sent after joining and not by the bot
             if message_time > self.join_time and sender != self.username:
+
                 # main AI response functionality
                 if message.startswith(".ai ") or message.startswith(self.bot_id):
                     if message.startswith(self.bot_id):
