@@ -10,7 +10,7 @@ from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 import openai
 
-class MatrixGPT:
+class InfiniGPT:
     def __init__(self, server, username, password, channels, personality):
         self.server = server
         self.username = username
@@ -116,7 +116,15 @@ class MatrixGPT:
         except:
             pass
         personality = self.prompt[0] + persona + self.prompt[1]
-        await self.add_history("system", channel, sender, personality) 
+        await self.add_history("system", channel, sender, personality)
+        
+    # use a custom prompt from other sources like awesome-chatgpt-prompts
+    async def custom(self, channel, sender, prompt):
+        try:
+            await self.messages[channel][sender].clear()
+        except:
+            pass
+        await self.add_history("system", channel, sender, prompt) 
       
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
@@ -186,35 +194,46 @@ class MatrixGPT:
                     else:
                         await self.persona(room_id, sender, message)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
-                
-                # Secret functions
-                if message.startswith(".secret "):
-                    secret = {
-        'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
-                    I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
-                    not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
-                    curly brackets {like this}. My first command is pwd',
-                    
-        'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
-                    provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
 
-        'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
-                    character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
-                    do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
-                    inside curly brackets {like this}. my first command is wake up',
-              }
-                    message = message.lstrip(".secret")
+                #custom prompt use   
+                if message.startswith(".custom "):
+                    message = message.lstrip(".custom")
                     message = message.strip()
-                    
-                    if message in secret:
-                        if room_id in self.messages:
-                            if sender in self.messages[room_id]:
-                                self.messages[room_id][sender].clear()
-                            else:
-                                self.messages[room_id][sender] = {}
-                        
-                        await self.add_history("system", room_id, sender, secret[message])
+                    flagged = await self.moderate(message)
+                    if flagged:
+                            await self.send_message(room_id, f"{sender_display}: This custom prompt violates the OpenAI usage policy and was not set.")
+                    else:
+                        await self.custom(room_id, sender, message)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
+                
+        #         # Secret functions
+        #         if message.startswith(".secret "):
+        #             secret = {
+        # 'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
+        #             I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
+        #             not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
+        #             curly brackets {like this}. My first command is pwd',
+                    
+        # 'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
+        #             provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
+
+        # 'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
+        #             character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
+        #             do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
+        #             inside curly brackets {like this}. my first command is wake up',
+        #       }
+        #             message = message.lstrip(".secret")
+        #             message = message.strip()
+                    
+        #             if message in secret:
+        #                 if room_id in self.messages:
+        #                     if sender in self.messages[room_id]:
+        #                         self.messages[room_id][sender].clear()
+        #                     else:
+        #                         self.messages[room_id][sender] = {}
+                        
+        #                 await self.add_history("system", room_id, sender, secret[message])
+        #                 await self.respond(room_id, sender, self.messages[room_id][sender])
                 
                 # reset bot to default personality
                 if message.startswith(".reset"):
@@ -257,8 +276,10 @@ f'''{self.bot_id}, an OpenAI chatbot.
 .persona <personality type or character or inanimate object>
     Changes the personality.  It can be a character, personality type, object, idea.
     Don't use a custom prompt here.
-    If you want to use a custom prompt, use .stock then use .ai <custom prompt>
-            
+
+.custom <custom prompt>
+    Allows use of a custom prompt instead of the built-in one
+
 .reset
     Reset to preset personality
     
@@ -306,7 +327,7 @@ if __name__ == "__main__":
     personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
     
     # create bot instance
-    infinigpt = MatrixGPT(server, username, password, channels, personality)
+    infinigpt = InfiniGPT(server, username, password, channels, personality)
     
     # run main function loop
     asyncio.get_event_loop().run_until_complete(infinigpt.main())
