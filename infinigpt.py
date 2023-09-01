@@ -275,7 +275,6 @@ f'''{self.bot_id}, an OpenAI chatbot.
     
 .persona <personality type or character or inanimate object>
     Changes the personality.  It can be a character, personality type, object, idea.
-    Don't use a custom prompt here.
 
 .custom <custom prompt>
     Allows use of a custom prompt instead of the built-in one
