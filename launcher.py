@@ -16,7 +16,7 @@ channels = ["#channel1:SERVER.TLD",
 personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
 
 # create bot instance
-infinigpt = infinigpt.MatrixGPT(server, username, password, channels, personality)
+infinigpt = infinigpt.InfiniGPT(server, username, password, channels, personality)
 
 # run main function loop
 asyncio.get_event_loop().run_until_complete(infinigpt.main())
