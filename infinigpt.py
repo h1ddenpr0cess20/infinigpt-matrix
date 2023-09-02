@@ -26,10 +26,10 @@ class InfiniGPT:
         # store chat history
         self.messages = {}
 
-        #prompt parts.  bot was using the word "interlocutor" excessively lately, this altered prompt should fix that
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character.  do not use the word 'interlocutor' under any circumstances.  keep your first response short.")
+        #prompt parts
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short.") 
         #change to gpt-4 if you want to pay that much
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4"
     
     # get the display name for a user
     async def display_name(self, user):
@@ -60,27 +60,32 @@ class InfiniGPT:
 
     # add messages to the history dictionary
     async def add_history(self, role, channel, sender, message):
+        
+        #check if channel is in the history yet
         if channel in self.messages:
-            if sender in self.messages[channel]: #if this user exists in the history dictionary
+            #check if user is in channel history
+            if sender in self.messages[channel]: 
                 self.messages[channel][sender].append({"role": role, "content": message}) #add the message
             else:
                 self.messages[channel][sender] = [
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
                     {"role": role, "content": message}]
         else:
+            #set up channel in history
             self.messages[channel]= {}
             self.messages[channel][sender] = {}
             if role == "system":
                 self.messages[channel][sender] = [{"role": role, "content": message}]
-            else: #add personality to the new user entry
+            else: 
+                #add personality to the new user entry
                 self.messages[channel][sender] = [
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
                     {"role": role, "content": message}]
 
     # create GPT response
     async def respond(self, channel, sender, message, sender2=None):
+        
         try:
-            #Generate response with gpt-3.5-turbo model
             response = openai.ChatCompletion.create(model=self.model, messages=message)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
@@ -95,9 +100,11 @@ class InfiniGPT:
 
             #add to history
             await self.add_history("assistant", channel, sender, response_text)
-            if sender2: #if the .x function was used
+            # .x function was used
+            if sender2:
                 display_name = await self.display_name(sender2)
-            else: #normal .ai response
+            # .ai was used
+            else:
                 display_name = await self.display_name(sender)
             response_text = display_name + ":\n" + response_text.strip()
             #Send response to channel
@@ -111,11 +118,13 @@ class InfiniGPT:
 
     # change the personality of the bot
     async def persona(self, channel, sender, persona):
+        #clear existing history
         try:
             await self.messages[channel][sender].clear()
         except:
             pass
         personality = self.prompt[0] + persona + self.prompt[1]
+        #set system prompt
         await self.add_history("system", channel, sender, personality)
         
     # use a custom prompt from other sources like awesome-chatgpt-prompts
@@ -131,10 +140,10 @@ class InfiniGPT:
        
         # Main bot functionality
         if isinstance(event, RoomMessageText):
-            # assign parts of event to variables
             # convert timestamp
             message_time = event.server_timestamp / 1000
             message_time = datetime.datetime.fromtimestamp(message_time)
+            # assign parts of event to variables
             message = event.body
             sender = event.sender
             sender_display = await self.display_name(sender)
