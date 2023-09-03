@@ -26,9 +26,15 @@ class InfiniGPT:
         # store chat history
         self.messages = {}
 
-        #prompt parts.  bot was using the word "interlocutor" excessively lately, this altered prompt should fix that
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character.  do not use the word 'interlocutor' under any circumstances.  keep your first response short.")
-        #change to gpt-4 if you want to pay that much
+        #prompt parts
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short.")
+        
+        #set GPT model 
+        #default setting is gpt-3.5-turbo for pricing reasons.  however, this model has some odd behaviors, such as:
+        #   starting sentences with "Ah" too frequently
+        #   addressing the user as "my dear interlocutor", and overusing that word in general
+        #   other minor annoyances
+        # change to gpt-4 if you want to pay that much, it does not seem to have this issue.
         self.model = "gpt-3.5-turbo"
     
     # get the display name for a user
@@ -81,7 +87,9 @@ class InfiniGPT:
     async def respond(self, channel, sender, message, sender2=None):
         try:
             #Generate response with gpt-3.5-turbo model
-            response = openai.ChatCompletion.create(model=self.model, messages=message)    
+            response = openai.ChatCompletion.create(model=self.model,
+                                                    temperature=1,
+                                                    messages=message)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
             print(e)
