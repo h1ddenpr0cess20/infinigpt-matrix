@@ -179,7 +179,7 @@ class InfiniGPT:
                 # collaborative functionality
                 if message.startswith(".x "):
                     m = message.split(" ", 2)
-                    m.pop()
+                    m.pop(0)
                     if len(m) > 1:
                         disp_name = m[0]
                         name_id = ""
