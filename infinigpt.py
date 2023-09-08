@@ -164,94 +164,91 @@ class InfiniGPT:
 
                 # main AI response functionality
                 if message.startswith(".ai ") or message.startswith(self.bot_id):
-                    if message.startswith(self.bot_id):
-                        message = message.lstrip(self.bot_id + ":")
-                    else:
-                        message = message.lstrip(".ai")
-                    message = message.strip()
+                    m = message.split(" ", 1)
+                    m = m[1]
                     # check if it violates ToS
-                    flagged = await self.moderate(message)
+                    flagged = await self.moderate(m)
                     if flagged:
                         await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
                         #add a way to penalize repeated violations here, maybe ignore for x amount of time after three violations
 
                     else:
-                        await self.add_history("user", room_id, sender, message)
+                        await self.add_history("user", room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
 
                 # collaborative functionality
                 if message.startswith(".x "):
-                    message = message.lstrip(".x")
-                    message = message.strip()
-                    message = message.split(" ", 1)
-                    disp_name = message[0]
-                    name_id = ""
-                    message = message[1]
-                    if room_id in self.messages:
-                        for user in self.messages[room_id]:
-                            try:
-                                username = await self.display_name(user)
-                                if disp_name == username:
-                                    name_id = user
-                            except:
-                                name_id = disp_name
-                        flagged = await self.moderate(message)
-                        if flagged:
-                            await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
-                        else:
-                            await self.add_history("user", room_id, name_id, message)
-                            await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
+                    m = message.split(" ", 2)
+                    m.pop()
+                    if len(m) > 1:
+                        disp_name = m[0]
+                        name_id = ""
+                        m = m[1]
+                        if room_id in self.messages:
+                            for user in self.messages[room_id]:
+                                try:
+                                    username = await self.display_name(user)
+                                    if disp_name == username:
+                                        name_id = user
+                                except:
+                                    name_id = disp_name
+                            flagged = await self.moderate(m)
+                            if flagged:
+                                await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
+                            else:
+                                await self.add_history("user", room_id, name_id, m)
+                                await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
 
                 #change personality    
                 if message.startswith(".persona "):
-                    message = message.lstrip(".persona")
-                    message = message.strip()
-                    flagged = await self.moderate(message)
+                    m = message.split(" ", 1)
+                    m = m[1]
+                    flagged = await self.moderate(m)
                     if flagged:
                             await self.send_message(room_id, f"{sender_display}: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
                     else:
-                        await self.persona(room_id, sender, message)
+                        await self.persona(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
 
                 #custom prompt use   
                 if message.startswith(".custom "):
-                    message = message.lstrip(".custom")
-                    message = message.strip()
-                    flagged = await self.moderate(message)
+                    m = message.split(" ", 1)
+                    m = m[1]
+                    flagged = await self.moderate(m)
                     if flagged:
                             await self.send_message(room_id, f"{sender_display}: This custom prompt violates the OpenAI usage policy and was not set.")
                     else:
-                        await self.custom(room_id, sender, message)
+                        await self.custom(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
                 
-        #         # Secret functions
-        #         if message.startswith(".secret "):
-        #             secret = {
-        # 'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
-        #             I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
-        #             not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
-        #             curly brackets {like this}. My first command is pwd',
+                # Secret functions
+                if message.startswith(".secret "):
+                    secret = {
+        'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
+                    I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
+                    not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
+                    curly brackets {like this}. My first command is pwd',
                     
-        # 'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
-        #             provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
+        'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
+                    provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
 
-        # 'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
-        #             character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
-        #             do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
-        #             inside curly brackets {like this}. my first command is wake up',
-        #       }
-        #             message = message.lstrip(".secret")
-        #             message = message.strip()
+        'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
+                    character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
+                    do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
+                    inside curly brackets {like this}. my first command is wake up',
+              }
+                    m = message.split(" ", 1)
+                    m = m[1]
                     
-        #             if message in secret:
-        #                 if room_id in self.messages:
-        #                     if sender in self.messages[room_id]:
-        #                         self.messages[room_id][sender].clear()
-        #                     else:
-        #                         self.messages[room_id][sender] = {}
+                    if m in secret:
+                        if room_id in self.messages:
+                            if sender in self.messages[room_id]:
+                                self.messages[room_id][sender].clear()
+                            else:
+                                self.messages[room_id][sender] = {}
                         
-        #                 await self.add_history("system", room_id, sender, secret[message])
-        #                 await self.respond(room_id, sender, self.messages[room_id][sender])
+                        await self.add_history("system", room_id, sender, secret[m])
+                        await self.respond(room_id, sender, self.messages[room_id][sender])
                 
                 # reset bot to default personality
                 if message.startswith(".reset"):
