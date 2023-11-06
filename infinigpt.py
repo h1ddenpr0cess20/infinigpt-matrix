@@ -8,17 +8,18 @@ Date: May 2023
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
-import openai
+from openai import OpenAI
 
 class InfiniGPT:
-    def __init__(self, server, username, password, channels, personality):
+    def __init__(self, server, username, password, channels, personality, api_key):
         self.server = server
         self.username = username
         self.password = password
         self.channels = channels
         self.personality =  personality
-
+        
         self.client = AsyncClient(server, username)
+        self.openai = OpenAI(api_key=api_key)
         
         # time program started and joined channels
         self.join_time = datetime.datetime.now()
@@ -30,11 +31,8 @@ class InfiniGPT:
         self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short.")
         
         #set GPT model 
-        #default setting is gpt-3.5-turbo for pricing reasons.  however, this model has some odd behaviors, such as:
-        #   starting sentences with "Ah" too frequently
-        #   addressing the user as "my dear interlocutor", and overusing that word in general
-        #   other minor annoyances
-        # change to gpt-4 if you want to pay that much, it does not seem to have this issue.
+        #default setting is gpt-3.5-turbo for pricing reasons
+        #change to gpt-4-1106-preview if you want to use gpt-4-turbo
         self.model = "gpt-3.5-turbo"
     
     # get the display name for a user
@@ -58,7 +56,7 @@ class InfiniGPT:
         flagged = False
         if not flagged:
             try:
-                moderate = openai.Moderation.create(input=message,) #run through the moderation endpoint
+                moderate = self.openai.moderations.create(input=message,) #run through the moderation endpoint
                 flagged = moderate["results"][0]["flagged"] #true or false
             except:
                 pass
@@ -93,7 +91,7 @@ class InfiniGPT:
         
         try:
             #Generate response with gpt-3.5-turbo model
-            response = openai.ChatCompletion.create(model=self.model,
+            response = self.openai.chat.completions.create(model=self.model,
                                                     temperature=1,
                                                     messages=message)    
         except Exception as e:
@@ -101,7 +99,7 @@ class InfiniGPT:
             print(e)
         else:
             #Extract response text
-            response_text = response['choices'][0]['message']['content']
+            response_text = response.choices[0].message.content
             
             #check for unwanted quotation marks around response and remove them
             if response_text.startswith('"') and response_text.endswith('"'):
