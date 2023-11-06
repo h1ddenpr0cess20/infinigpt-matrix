@@ -28,12 +28,12 @@ class InfiniGPT:
         self.messages = {}
 
         #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short.")
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short")
         
         #set GPT model 
         #default setting is gpt-3.5-turbo for pricing reasons
         #change to gpt-4-1106-preview if you want to use gpt-4-turbo
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-3.5-turbo-1106"
     
     # get the display name for a user
     async def display_name(self, user):
@@ -325,7 +325,7 @@ Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix
 
 
 if __name__ == "__main__":
-    openai.api_key = "API_KEY"
+    api_key = "API_KEY"
     
     server = "https://matrix.org" #change if using different homeserver
     username = "@USERNAME:SERVER.TLD" 
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
     
     # create bot instance
-    infinigpt = InfiniGPT(server, username, password, channels, personality)
+    infinigpt = InfiniGPT(server, username, password, channels, personality, api_key)
     
     # run main function loop
     asyncio.get_event_loop().run_until_complete(infinigpt.main())
