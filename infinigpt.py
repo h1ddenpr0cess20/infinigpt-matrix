@@ -28,7 +28,7 @@ class InfiniGPT:
         self.messages = {}
 
         #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short, between one word and one paragraph.")
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses relatively short.")
         
         #set GPT model 
         #default setting is gpt-3.5-turbo for pricing reasons
@@ -120,7 +120,7 @@ class InfiniGPT:
             except Exception as e: 
                 print(e)
             #Shrink history list for token size management (also prevents rate limit error)
-            if len(self.messages[channel][sender]) > 14:
+            if len(self.messages[channel][sender]) > 20:
                 del self.messages[channel][sender][1:3]  #delete the first set of question and answers 
 
     # change the personality of the bot
