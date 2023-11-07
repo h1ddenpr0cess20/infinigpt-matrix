@@ -28,7 +28,7 @@ class InfiniGPT:
         self.messages = {}
 
         #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short")
+        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses short, between one word and one paragraph.")
         
         #set GPT model 
         #default setting is gpt-3.5-turbo for pricing reasons
@@ -57,7 +57,7 @@ class InfiniGPT:
         if not flagged:
             try:
                 moderate = self.openai.moderations.create(input=message,) #run through the moderation endpoint
-                flagged = moderate["results"][0]["flagged"] #true or false
+                flagged = moderate.results[0].flagged #true or false
             except:
                 pass
         return flagged
