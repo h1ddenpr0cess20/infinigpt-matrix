@@ -1,7 +1,11 @@
 import asyncio
 import infinigpt
+import os
 
-api_key = "API_KEY"
+#put a key here and uncomment if not already set in environment
+#os.environ['OPENAI_API_KEY'] = "api_key"
+
+api_key = os.environ.get("OPENAI_API_KEY")
 
 server = "https://matrix.org" #change if using different homeserver
 username = "@USERNAME:SERVER.TLD" 
