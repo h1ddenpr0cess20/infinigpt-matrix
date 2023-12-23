@@ -9,6 +9,7 @@ import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 from openai import OpenAI
+import os
 
 class InfiniGPT:
     def __init__(self, server, username, password, channels, personality, api_key):
@@ -90,10 +91,11 @@ class InfiniGPT:
     async def respond(self, channel, sender, message, sender2=None):
         
         try:
-            #Generate response with gpt-3.5-turbo model
-            response = self.openai.chat.completions.create(model=self.model,
-                                                    temperature=1,
-                                                    messages=message)    
+            #Generate response with openai model
+            response = self.openai.chat.completions.create(
+                    model=self.model,
+                    temperature=1,
+                    messages=message)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
             print(e)
@@ -120,7 +122,7 @@ class InfiniGPT:
             except Exception as e: 
                 print(e)
             #Shrink history list for token size management (also prevents rate limit error)
-            if len(self.messages[channel][sender]) > 20:
+            if len(self.messages[channel][sender]) > 24:
                 del self.messages[channel][sender][1:3]  #delete the first set of question and answers 
 
     # change the personality of the bot
@@ -325,7 +327,10 @@ Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix
 
 
 if __name__ == "__main__":
-    api_key = "API_KEY"
+    #put a key here and uncomment if not already set in environment
+    #os.environ['OPENAI_API_KEY'] = "api_key"
+
+    api_key = os.environ.get("OPENAI_API_KEY")
     
     server = "https://matrix.org" #change if using different homeserver
     username = "@USERNAME:SERVER.TLD" 
