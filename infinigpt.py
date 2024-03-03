@@ -21,6 +21,8 @@ class InfiniGPT:
         
         self.client = AsyncClient(server, username)
         self.openai = OpenAI(api_key=api_key)
+        #uncomment to use Ollama instead of OpenAI
+        #self.openai.base_url = 'http://localhost:11434/v1'
         
         # time program started and joined channels
         self.join_time = datetime.datetime.now()
@@ -33,8 +35,9 @@ class InfiniGPT:
         
         #set GPT model 
         #default setting is gpt-3.5-turbo for pricing reasons
-        #change to gpt-4-1106-preview if you want to use gpt-4-turbo
-        self.model = "gpt-3.5-turbo-1106"
+        #change to gpt-4-turbo-preview if you want to use gpt-4-turbo
+        #change to the name of an Ollama model if using Ollama, for example "mistral"
+        self.model = "gpt-3.5-turbo" 
     
     # get the display name for a user
     async def display_name(self, user):
