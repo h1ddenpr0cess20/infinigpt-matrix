@@ -12,17 +12,39 @@ from openai import OpenAI
 import os
 
 class InfiniGPT:
-    def __init__(self, server, username, password, channels, personality, api_key):
+    def __init__(self, server, username, password, channels, personality, admin, api_key):
         self.server = server
         self.username = username
         self.password = password
         self.channels = channels
         self.personality =  personality
+        self.admin = admin
         
         self.client = AsyncClient(server, username)
         self.openai = OpenAI(api_key=api_key)
-        #uncomment to use Ollama instead of OpenAI
-        #self.openai.base_url = 'http://localhost:11434/v1'
+        
+        #add your desired ollama models and gpt models here
+        self.models = [
+            'gpt-3.5-turbo',
+            'gpt-4-turbo-preview',
+            'codellama',
+            'dolphin-mistral',
+            'gemma',
+            'llama2',
+            'mistral',
+            'orca2',
+            'solar',
+            'stablelm2',
+            'starling-lm',
+            'zephyr'
+            ]
+        
+        #set model 
+        #default setting is gpt-3.5-turbo for pricing reasons
+        #change to gpt-4-turbo-preview if you want to use gpt-4-turbo
+        #change to the name of an Ollama model if using Ollama, for example "mistral"
+        self.change_model("gpt-3.5-turbo") 
+        
         
         # time program started and joined channels
         self.join_time = datetime.datetime.now()
@@ -33,12 +55,14 @@ class InfiniGPT:
         #prompt parts
         self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses relatively short.")
         
-        #set GPT model 
-        #default setting is gpt-3.5-turbo for pricing reasons
-        #change to gpt-4-turbo-preview if you want to use gpt-4-turbo
-        #change to the name of an Ollama model if using Ollama, for example "mistral"
-        self.model = "gpt-3.5-turbo" 
-    
+    def change_model(self, modelname):
+        if modelname.startswith("gpt"):
+            self.openai.base_url = 'https://api.openai.com/v1'
+        else:
+            self.openai.base_url = 'http://localhost:11434/v1'
+
+        self.model = self.models[self.models.index(modelname)]
+
     # get the display name for a user
     async def display_name(self, user):
         try:
@@ -252,6 +276,19 @@ class InfiniGPT:
                         
                         await self.add_history("system", room_id, sender, secret[m])
                         await self.respond(room_id, sender, self.messages[room_id][sender])
+
+                #list models
+                if message == ".model":
+                    await self.send_message(room_id, f"Current model: {self.model}\nAvailable models: " + ", ".join(self.models))
+                #change model if admin
+                if message.startswith(".model ") and sender == self.admin:
+                    model = message.split(" ", 1)[1]
+                    if model in self.models:
+                        self.change_model(model)
+                        await self.send_message(room_id, f"Model set to {self.model}")
+                    else:
+                        await self.send_message(room_id, "Try again")
+
                 
                 # reset bot to default personality
                 if message.startswith(".reset"):
@@ -345,9 +382,12 @@ if __name__ == "__main__":
                 "!ExAmPleOfApRivAtErOoM:SERVER.TLD", ] #enter the channels you want it to join here
     
     personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
-    
+
+    #bot owner
+    admin = '@adminname:matrix.org'
+  
     # create bot instance
-    infinigpt = InfiniGPT(server, username, password, channels, personality, api_key)
+    infinigpt = InfiniGPT(server, username, password, channels, personality, admin, api_key)
     
     # run main function loop
     asyncio.get_event_loop().run_until_complete(infinigpt.main())
