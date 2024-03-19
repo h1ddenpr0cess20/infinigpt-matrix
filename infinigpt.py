@@ -33,7 +33,7 @@ class InfiniGPT:
             'gemma',
             'llama2',
             'mistral',
-            'openchat'
+            'openchat',
             'orca2',
             'solar',
             'stablelm2',
