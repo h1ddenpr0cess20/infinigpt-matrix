@@ -3,15 +3,17 @@ InfiniGPT is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protoc
 
 Also available for IRC at [infinigpt-irc](https://github.com/h1ddenpr0cess20/infinigpt-irc/)
 
-Altered version available for use with offline LLMs at [ollamarama-matrix](https://github.com/h1ddenpr0cess20/ollamarama-matrix)
+Now with Ollama support and model switching.
 
 ## Setup
 
 ```
-pip3 install matrix-nio openai
+pip3 install matrix-nio openai ollama-python
 ```
 
 Get an [OpenAI API](https://platform.openai.com/signup) key 
+
+Add desired Ollama models to the models list, if using.
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.
 
@@ -43,6 +45,15 @@ python3 launcher.py
     
 **.stock**
     Remove personality and reset to standard GPT settings
+
+**.model**
+    List available large language models
+
+**.model _modelname_**
+    Change model
+
+**.model reset**
+    Reset model
     
 **.help**
     Show the built-in help menu

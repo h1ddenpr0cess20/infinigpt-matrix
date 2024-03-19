@@ -10,6 +10,7 @@ from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 from openai import OpenAI
 import os
+#import ollama
 
 class InfiniGPT:
     def __init__(self, server, username, password, channels, personality, admin, api_key):
@@ -32,6 +33,7 @@ class InfiniGPT:
             'gemma',
             'llama2',
             'mistral',
+            'openchat'
             'orca2',
             'solar',
             'stablelm2',
@@ -39,11 +41,23 @@ class InfiniGPT:
             'zephyr'
             ]
         
+        
+        #alternatively create list automatically from all installed models using ollama-python
+        # def model_list():
+        #     models = ollama.list()
+
+        #     model_list = sorted([model['name'].removesuffix(":latest") for model in models['models']])
+        #     model_list.insert(0,"gpt-3.5-turbo")
+        #     model_list.insert(1,"gpt-4-turbo-preview")
+
+        #     return model_list
+
+        # self.models = model_list()
+
         #set model 
-        #default setting is gpt-3.5-turbo for pricing reasons
-        #change to gpt-4-turbo-preview if you want to use gpt-4-turbo
-        #change to the name of an Ollama model if using Ollama, for example "mistral"
-        self.change_model("gpt-3.5-turbo") 
+        #change to the name of an Ollama model if using Ollama, for example "zephyr"
+        self.default_model = "gpt-3.5-turbo"
+        self.change_model(self.default_model) 
         
         
         # time program started and joined channels
@@ -286,6 +300,9 @@ class InfiniGPT:
                     if model in self.models:
                         self.change_model(model)
                         await self.send_message(room_id, f"Model set to {self.model}")
+                    elif model == "reset":
+                        self.change_model(self.default_model)
+                        await self.send_message(room_id, f"Model set to {self.model}")
                     else:
                         await self.send_message(room_id, "Try again")
 
@@ -339,6 +356,15 @@ f'''{self.bot_id}, an OpenAI chatbot.
     
 .stock
     Remove personality and reset to standard GPT settings
+
+.model
+    List available large language models
+
+.model <modelname>
+    Change model
+
+.model reset
+    Reset to default model
 
 Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix    
 ''')
