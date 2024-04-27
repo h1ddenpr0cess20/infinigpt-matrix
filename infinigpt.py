@@ -10,38 +10,23 @@ from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 from openai import OpenAI
 import os
+import json
 #import ollama
 
 class InfiniGPT:
-    def __init__(self, server, username, password, channels, personality, admin, api_key):
-        self.server = server
-        self.username = username
-        self.password = password
-        self.channels = channels
-        self.personality =  personality
-        self.admin = admin
+    def __init__(self, api_key):
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+            f.close()
+
+        self.server, self.username, self.password, self.channels, self.personality, self.admin = config[1].values()
         
-        self.client = AsyncClient(server, username)
+        self.client = AsyncClient(self.server, self.username)
         self.openai = OpenAI(api_key=api_key)
         
-        #add your desired ollama models and gpt models here
-        self.models = [
-            'gpt-3.5-turbo',
-            'gpt-4-turbo-preview',
-            'codellama',
-            'dolphin-mistral',
-            'gemma',
-            'llama2',
-            'mistral',
-            'openchat',
-            'orca2',
-            'solar',
-            'stablelm2',
-            'starling-lm',
-            'zephyr'
-            ]
-        
-        
+        #load models
+        self.models = config[0]['models']
+                
         #alternatively create list automatically from all installed models using ollama-python
         # def model_list():
         #     models = ollama.list()
@@ -55,10 +40,10 @@ class InfiniGPT:
         # self.models = model_list()
 
         #set model 
-        #change to the name of an Ollama model if using Ollama, for example "zephyr"
+        #change to the name of an Ollama model if using Ollama, for example "llama3"
+
         self.default_model = "gpt-3.5-turbo"
-        self.change_model(self.default_model) 
-        
+        self.change_model(self.default_model)
         
         # time program started and joined channels
         self.join_time = datetime.datetime.now()
@@ -87,7 +72,7 @@ class InfiniGPT:
 
     # simplifies sending messages to the channel            
     async def send_message(self, channel, message):
-         await self.client.room_send(
+        await self.client.room_send(
             room_id=channel,
             message_type="m.room.message",
             content={"msgtype": "m.text", "body": message},
@@ -184,10 +169,9 @@ class InfiniGPT:
         except:
             pass
         await self.add_history("system", channel, sender, prompt) 
-      
+
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
-       
         # Main bot functionality
         if isinstance(event, RoomMessageText):
             # convert timestamp
@@ -262,35 +246,6 @@ class InfiniGPT:
                         await self.custom(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
                 
-                # Secret functions
-                if message.startswith(".secret "):
-                    secret = {
-        'terminal': 'I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. \
-                    I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do \
-                    not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside \
-                    curly brackets {like this}. My first command is pwd',
-                    
-        'python': 'I want you to act like a Python interpreter. I will give you Python code, and you will execute it. Do not \
-                    provide any explanations. Do not respond with anything except the output of the code. The first code is: print("Enter your code")',
-
-        'text game': 'I want you to act as a text based adventure game. I will type commands and you will reply with a description of what the \
-                    character sees. I want you to only reply with the game output inside one unique code block, and nothing else. do not write explanations.\
-                    do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text \
-                    inside curly brackets {like this}. my first command is wake up',
-              }
-                    m = message.split(" ", 1)
-                    m = m[1]
-                    
-                    if m in secret:
-                        if room_id in self.messages:
-                            if sender in self.messages[room_id]:
-                                self.messages[room_id][sender].clear()
-                            else:
-                                self.messages[room_id][sender] = {}
-                        
-                        await self.add_history("system", room_id, sender, secret[m])
-                        await self.respond(room_id, sender, self.messages[room_id][sender])
-
                 #list models
                 if message == ".model":
                     await self.send_message(room_id, f"Current model: {self.model}\nAvailable models: " + ", ".join(self.models))
@@ -333,41 +288,10 @@ class InfiniGPT:
                 
                 # help menu
                 if message.startswith(".help"):
-                    await self.send_message(room_id, 
-f'''{self.bot_id}, an OpenAI chatbot.
-
-.ai <message> or {self.bot_id}: <message>
-    Basic usage.
-    Personality is preset by bot operator.
-    This bot is {self.personality}.
-
-.x <user> <message>
-    This allows you to talk to another user's chat history.
-    <user> is the display name of the user whose history you want to use
-    
-.persona <personality type or character or inanimate object>
-    Changes the personality.  It can be a character, personality type, object, idea.
-
-.custom <custom prompt>
-    Allows use of a custom prompt instead of the built-in one
-
-.reset
-    Reset to preset personality
-    
-.stock
-    Remove personality and reset to standard GPT settings
-
-.model
-    List available large language models
-
-.model <modelname>
-    Change model
-
-.model reset
-    Reset to default model
-
-Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix    
-''')
+                    with open("help.txt", "r") as f:
+                        help_text = f.read()
+                        f.close()
+                    await self.send_message(room_id, help_text)
 
     # main loop
     async def main(self):
@@ -388,7 +312,6 @@ Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix
         
         # start listening for messages
         self.client.add_event_callback(self.message_callback, RoomMessageText)
-                     
         await self.client.sync_forever(timeout=30000)  # milliseconds
 
 
@@ -398,23 +321,7 @@ if __name__ == "__main__":
 
     api_key = os.environ.get("OPENAI_API_KEY")
     
-    server = "https://matrix.org" #change if using different homeserver
-    username = "@USERNAME:SERVER.TLD" 
-    password = "PASSWORD"
-
-    channels = ["#channel1:SERVER.TLD", 
-                "#channel2:SERVER.TLD", 
-                "#channel3:SERVER.TLD", 
-                "!ExAmPleOfApRivAtErOoM:SERVER.TLD", ] #enter the channels you want it to join here
+    infinigpt = InfiniGPT(api_key)
     
-    personality = "an AI that can assume any personality, named InfiniGPT" #change to whatever suits your needs
-
-    #bot owner
-    admin = '@adminname:matrix.org'
-  
-    # create bot instance
-    infinigpt = InfiniGPT(server, username, password, channels, personality, admin, api_key)
-    
-    # run main function loop
     asyncio.get_event_loop().run_until_complete(infinigpt.main())
 

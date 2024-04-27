@@ -8,19 +8,25 @@ Now with Ollama support and model switching.
 ## Setup
 
 ```
-pip3 install matrix-nio openai ollama-python
+pip3 install matrix-nio openai 
 ```
 
-Get an [OpenAI API](https://platform.openai.com/signup) key 
+and optionally:
+
+```
+pip3 install ollama-python
+```
+
+Get an [OpenAI API](https://platform.openai.com/signup) key, set it as an environment variable as OPENAI_API_KEY.  There is a place to set the environment variable in the code if you want to use that instead.
 
 Add desired Ollama models to the models list, if using.
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.
 
-Plug those into the appropriate variables in the launcher.py file.
+Plug those into the appropriate variables in the config.json file.
 
 ```
-python3 launcher.py
+python3 infinigpt.py
 ```
 
 ## Use
@@ -38,7 +44,7 @@ python3 launcher.py
     Don't use a custom prompt here.
 
 **.custom _prompt_**
-    Allows use of a custom prompt instead of the built-in one, such as one from [awesome-chatgpt-prompts](https://github.com/f/awesome-chatgpt-prompts)
+    Allows use of a custom system prompt instead of the built-in one
 
 **.reset**
     Reset to preset personality
