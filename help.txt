@@ -1,0 +1,31 @@
+.ai <message> or botname: <message>
+    Basic usage.
+    Personality is preset by bot operator.
+    This bot is {self.personality}.
+
+.x <user> <message>
+    This allows you to talk to another user's chat history.
+    <user> is the display name of the user whose history you want to use
+    
+.persona <personality type or character or inanimate object>
+    Changes the personality.  It can be a character, personality type, object, idea.
+
+.custom <custom prompt>
+    Allows use of a custom prompt instead of the built-in one
+
+.reset
+    Reset to preset personality
+    
+.stock
+    Remove personality and reset to standard GPT settings
+
+.model
+    List available large language models
+
+.model <modelname>
+    Change model
+
+.model reset
+    Reset to default model
+
+Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix    
