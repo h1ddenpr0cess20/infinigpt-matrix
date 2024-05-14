@@ -33,7 +33,7 @@ class InfiniGPT:
 
         #     model_list = sorted([model['name'].removesuffix(":latest") for model in models['models']])
         #     model_list.insert(0,"gpt-3.5-turbo")
-        #     model_list.insert(1,"gpt-4-turbo-preview")
+        #     model_list.insert(1,"gpt-4o")
 
         #     return model_list
 
@@ -42,7 +42,7 @@ class InfiniGPT:
         #set model 
         #change to the name of an Ollama model if using Ollama, for example "llama3"
 
-        self.default_model = "gpt-3.5-turbo"
+        self.default_model = "gpt-4o"
         self.change_model(self.default_model)
         
         # time program started and joined channels
@@ -147,6 +147,7 @@ class InfiniGPT:
                 await self.send_message(channel, response_text)
             except Exception as e: 
                 print(e)
+                
             #Shrink history list for token size management (also prevents rate limit error)
             if len(self.messages[channel][sender]) > 24:
                 del self.messages[channel][sender][1:3]  #delete the first set of question and answers 
@@ -182,11 +183,10 @@ class InfiniGPT:
             sender = event.sender
             sender_display = await self.display_name(sender)
             room_id = room.room_id
-            user = await self.display_name(event.sender)
-
+            
             #check if the message was sent after joining and not by the bot
             if message_time > self.join_time and sender != self.username:
-
+                user = await self.display_name(event.sender)
                 # main AI response functionality
                 if message.startswith(".ai ") or message.startswith(self.bot_id):
                     m = message.split(" ", 1)
