@@ -11,33 +11,23 @@ import datetime
 from openai import OpenAI
 import os
 import json
-#import ollama
+
 
 class InfiniGPT:
     def __init__(self, api_key):
-        with open('config.json', 'r') as f:
+        self.config_file = "config.json"
+        with open(self.config_file, 'r') as f:
             config = json.load(f)
             f.close()
-
+        #load models
+        self.models = config[0]['models']
         self.server, self.username, self.password, self.channels, self.personality, self.admin = config[1].values()
         
         self.client = AsyncClient(self.server, self.username)
         self.openai = OpenAI(api_key=api_key)
         
-        #load models
-        self.models = config[0]['models']
-                
         #alternatively create list automatically from all installed models using ollama-python
-        # def model_list():
-        #     models = ollama.list()
-
-        #     model_list = sorted([model['name'].removesuffix(":latest") for model in models['models']])
-        #     model_list.insert(0,"gpt-3.5-turbo")
-        #     model_list.insert(1,"gpt-4o")
-
-        #     return model_list
-
-        # self.models = model_list()
+        # self.models = self.model_list()
 
         #set model 
         #change to the name of an Ollama model if using Ollama, for example "llama3"
@@ -53,7 +43,18 @@ class InfiniGPT:
 
         #prompt parts
         self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses relatively short.")
+
+    def model_list(self):
+        import ollama
         
+        models = ollama.list()
+
+        model_list = sorted([model['name'].removesuffix(":latest") for model in models['models']])
+        model_list.insert(0,"gpt-3.5-turbo")
+        model_list.insert(1,"gpt-4o")
+
+        return model_list
+
     def change_model(self, modelname):
         if modelname.startswith("gpt"):
             self.openai.base_url = 'https://api.openai.com/v1'
@@ -113,11 +114,10 @@ class InfiniGPT:
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
                     {"role": role, "content": message}]
 
-    # create GPT response
+    # create AI response
     async def respond(self, channel, sender, message, sender2=None):
-        
         try:
-            #Generate response with openai model
+            #Generate response with AI model
             response = self.openai.chat.completions.create(
                     model=self.model,
                     temperature=1,
@@ -247,20 +247,29 @@ class InfiniGPT:
                         await self.respond(room_id, sender, self.messages[room_id][sender])
                 
                 #list models
-                if message == ".model":
-                    await self.send_message(room_id, f"Current model: {self.model}\nAvailable models: " + ", ".join(self.models))
-                #change model if admin
-                if message.startswith(".model ") and sender == self.admin:
-                    model = message.split(" ", 1)[1]
-                    if model in self.models:
-                        self.change_model(model)
-                        await self.send_message(room_id, f"Model set to {self.model}")
-                    elif model == "reset":
-                        self.change_model(self.default_model)
-                        await self.send_message(room_id, f"Model set to {self.model}")
-                    else:
-                        await self.send_message(room_id, "Try again")
+                if message.startswith(".model"):
+                    with open(self.config_file, 'r') as f:
+                        config = json.load(f)
+                        f.close()
+                    #load models
+                    self.models = config[0]['models']
 
+                    #alternatively create list automatically from all installed models
+                    # self.models = self.model_list()
+
+                    if message == ".model":
+                        await self.send_message(room_id, f"Current model: {self.model}\nAvailable models: " + ", ".join(self.models))
+                    #change model if admin
+                    if message.startswith(".model ") and sender == self.admin:
+                        model = message.split(" ", 1)[1]
+                        if model in self.models:
+                            self.change_model(model)
+                            await self.send_message(room_id, f"Model set to {self.model}")
+                        elif model == "reset":
+                            self.change_model(self.default_model)
+                            await self.send_message(room_id, f"Model set to {self.model}")
+                        else:
+                            await self.send_message(room_id, "Try again")
                 
                 # reset bot to default personality
                 if message.startswith(".reset"):
