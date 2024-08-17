@@ -125,7 +125,7 @@ class InfiniGPT:
             # .ai was used
             else:
                 display_name = await self.display_name(sender)
-            response_text = display_name + ":\n" + response_text.strip()
+            response_text = f"**{display_name}**:\n{response_text.strip()}"
             #Send response to channel
             try:
                 await self.send_message(channel, response_text)
@@ -181,7 +181,7 @@ class InfiniGPT:
                     # check if it violates ToS
                     flagged = await self.moderate(m)
                     if flagged:
-                        await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
+                        await self.send_message(room_id, f"**{sender_display}**: This message violates the OpenAI usage policy and was not sent.")
                         #add a way to penalize repeated violations here, maybe ignore for x amount of time after three violations
 
                     else:
@@ -206,7 +206,7 @@ class InfiniGPT:
                                     name_id = disp_name
                             flagged = await self.moderate(m)
                             if flagged:
-                                await self.send_message(room_id, f"{sender_display}: This message violates the OpenAI usage policy and was not sent.")
+                                await self.send_message(room_id, f"**{sender_display}**: This message violates the OpenAI usage policy and was not sent.")
                             else:
                                 await self.add_history("user", room_id, name_id, m)
                                 await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
@@ -217,7 +217,7 @@ class InfiniGPT:
                     m = m[1]
                     flagged = await self.moderate(m)
                     if flagged:
-                            await self.send_message(room_id, f"{sender_display}: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
+                            await self.send_message(room_id, f"**{sender_display}**: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
                     else:
                         await self.persona(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
@@ -228,7 +228,7 @@ class InfiniGPT:
                     m = m[1]
                     flagged = await self.moderate(m)
                     if flagged:
-                            await self.send_message(room_id, f"{sender_display}: This custom prompt violates the OpenAI usage policy and was not set.")
+                            await self.send_message(room_id, f"**{sender_display}**: This custom prompt violates the OpenAI usage policy and was not set.")
                     else:
                         await self.custom(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
