@@ -11,11 +11,6 @@ Now with Ollama support and model switching.
 pip3 install matrix-nio openai 
 ```
 
-and optionally:
-
-```
-pip3 install ollama-python
-```
 
 Get an [OpenAI API](https://platform.openai.com/signup) key, set it as an environment variable as OPENAI_API_KEY.  There is a place to set the environment variable in the code if you want to use that instead.
 
