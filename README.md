@@ -19,11 +19,11 @@ pip3 install ollama-python
 
 Get an [OpenAI API](https://platform.openai.com/signup) key, set it as an environment variable as OPENAI_API_KEY.  There is a place to set the environment variable in the code if you want to use that instead.
 
-Add desired Ollama models to the models list, if using.
+Add desired Ollama models to the models list in config.json, if using.
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.
 
-Plug those into the appropriate variables in the config.json file.
+Add those to the config.json file.
 
 ```
 python3 infinigpt.py

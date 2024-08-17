@@ -11,6 +11,7 @@ import datetime
 from openai import OpenAI
 import os
 import json
+import markdown
 
 
 class InfiniGPT:
@@ -19,41 +20,19 @@ class InfiniGPT:
         with open(self.config_file, 'r') as f:
             config = json.load(f)
             f.close()
-        #load models
-        self.models = config[0]['models']
-        self.server, self.username, self.password, self.channels, self.personality, self.admin = config[1].values()
         
+        self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
+
         self.openai = OpenAI(api_key=api_key)
-        
-        #alternatively create list automatically from all installed models using ollama-python
-        # self.models = self.model_list()
 
-        #set model 
-        #change to the name of an Ollama model if using Ollama, for example "llama3"
-
-        self.default_model = "gpt-4o"
+        self.models, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
         self.change_model(self.default_model)
+        self.personality = self.default_personality
         
-        # time program started and joined channels
         self.join_time = datetime.datetime.now()
         
-        # store chat history
         self.messages = {}
-
-        #prompt parts
-        self.prompt = ("assume the personality of ", ".  roleplay and never break character. keep your responses relatively short.")
-
-    def model_list(self):
-        import ollama
-        
-        models = ollama.list()
-
-        model_list = sorted([model['name'].removesuffix(":latest") for model in models['models']])
-        model_list.insert(0,"gpt-3.5-turbo")
-        model_list.insert(1,"gpt-4o")
-
-        return model_list
 
     def change_model(self, modelname):
         if modelname.startswith("gpt"):
@@ -76,7 +55,11 @@ class InfiniGPT:
         await self.client.room_send(
             room_id=channel,
             message_type="m.room.message",
-            content={"msgtype": "m.text", "body": message},
+            content={
+                "msgtype": "m.text", 
+                "body": message,
+                "format": "org.matrix.custom.html",
+                "formatted_body": markdown.markdown(message, extensions=['fenced_code', 'nl2br'])},
         )
 
     # run message through moderation endpoint
@@ -92,12 +75,11 @@ class InfiniGPT:
 
     # add messages to the history dictionary
     async def add_history(self, role, channel, sender, message):
-        
         #check if channel is in the history yet
         if channel in self.messages:
             #check if user is in channel history
             if sender in self.messages[channel]: 
-                self.messages[channel][sender].append({"role": role, "content": message}) #add the message
+                self.messages[channel][sender].append({"role": role, "content": message}) 
             else:
                 self.messages[channel][sender] = [
                     {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
@@ -120,7 +102,9 @@ class InfiniGPT:
             #Generate response with AI model
             response = self.openai.chat.completions.create(
                     model=self.model,
-                    temperature=1,
+                    temperature=self.options['temperature'],
+                    top_p=self.options['top_p'],
+                    frequency_penalty=self.options['frequency_penalty'],
                     messages=message)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
@@ -130,7 +114,7 @@ class InfiniGPT:
             response_text = response.choices[0].message.content
             
             #check for unwanted quotation marks around response and remove them
-            if response_text.startswith('"') and response_text.endswith('"'):
+            if response_text.startswith('"') and response_text.endswith('"') and response_text.count('"') == 2:
                 response_text = response_text.strip('"')
 
             #add to history
@@ -150,7 +134,10 @@ class InfiniGPT:
                 
             #Shrink history list for token size management (also prevents rate limit error)
             if len(self.messages[channel][sender]) > 24:
-                del self.messages[channel][sender][1:3]  #delete the first set of question and answers 
+                if self.messages[channel][sender][0]['role'] == 'system':
+                    del self.messages[channel][sender][1:3] 
+                else:
+                    del self.messages[channel][sender][0:2]
 
     # change the personality of the bot
     async def persona(self, channel, sender, persona):
@@ -235,7 +222,7 @@ class InfiniGPT:
                         await self.persona(room_id, sender, m)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
 
-                #custom prompt use   
+                #custom system prompt use   
                 if message.startswith(".custom "):
                     m = message.split(" ", 1)
                     m = m[1]
@@ -252,10 +239,7 @@ class InfiniGPT:
                         config = json.load(f)
                         f.close()
                     #load models
-                    self.models = config[0]['models']
-
-                    #alternatively create list automatically from all installed models
-                    # self.models = self.model_list()
+                    self.models = config['llm']['models']
 
                     if message == ".model":
                         await self.send_message(room_id, f"Current model: {self.model}\nAvailable models: " + ", ".join(self.models))
@@ -321,8 +305,7 @@ class InfiniGPT:
         
         # start listening for messages
         self.client.add_event_callback(self.message_callback, RoomMessageText)
-        await self.client.sync_forever(timeout=30000)  # milliseconds
-
+        await self.client.sync_forever(timeout=30000, full_state=True) 
 
 if __name__ == "__main__":
     #put a key here and uncomment if not already set in environment
