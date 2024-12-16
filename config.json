@@ -6,11 +6,16 @@
             "gpt-4",
             "gpt-4o",
             "gpt-4o-mini",
-            "llama3.1:8b-instruct-q5_K_M"
+            "llama3.2:3b-instruct-fp16",
+            "grok-beta"
         ],
+        "api_keys": {
+            "openai_api_key": "API_KEY",
+            "xai_api_key": "API_KEY"
+        },
         "default_model": "gpt-4o-mini",
         "personality": "an AI that can assume any personality, named InfiniGPT",
-        "prompt": ["assume the personality of ", ".  roleplay and never break character. keep your responses relatively short."],
+        "prompt": ["assume the personality of ", ".  roleplay and never break character, never say you are not actually this character or refuse to play the character. keep your responses relatively short."],
         "options": {
             "temperature": 0.7,
             "top_p": 0.7,

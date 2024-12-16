@@ -1,21 +1,19 @@
 """
-infiniGPT: An OpenAI chatbot for the Matrix chat protocol with infinite personalities.
+infiniGPT: An AI chatbot for the Matrix chat protocol with infinite personalities with support for OpenAI, xAI, and Ollama models
 
 Author: Dustin Whyte
-Date: May 2023
 """
 
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 from openai import OpenAI
-import os
 import json
 import markdown
 
 
 class InfiniGPT:
-    def __init__(self, api_key):
+    def __init__(self):
         self.config_file = "config.json"
         with open(self.config_file, 'r') as f:
             config = json.load(f)
@@ -24,9 +22,10 @@ class InfiniGPT:
         self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
 
-        self.openai = OpenAI(api_key=api_key)
+        self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
+        self.openai_api_key, self.xai_api_key = self.api_keys.values()
+        self.openai = OpenAI(api_key=self.openai_api_key)
 
-        self.models, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
         self.change_model(self.default_model)
         self.personality = self.default_personality
         
@@ -35,8 +34,12 @@ class InfiniGPT:
         self.messages = {}
 
     def change_model(self, modelname):
-        if modelname.startswith("gpt"):
+        if modelname.startswith("gpt") or modelname.startswith('o1'):
             self.openai.base_url = 'https://api.openai.com/v1'
+            self.openai.api_key = self.openai_api_key
+        elif modelname.startswith("grok"):
+            self.openai.base_url = 'https://api.x.ai/v1/'
+            self.openai.api_key = self.xai_api_key
         else:
             self.openai.base_url = 'http://localhost:11434/v1'
 
@@ -67,9 +70,9 @@ class InfiniGPT:
         flagged = False
         if not flagged:
             try:
-                moderate = self.openai.moderations.create(input=message,) #run through the moderation endpoint
+                moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message,) #run through the OpenAI moderation endpoint
                 flagged = moderate.results[0].flagged #true or false
-            except:
+            except: #will happen with non-OpenAI models
                 pass
         return flagged
 
@@ -171,6 +174,7 @@ class InfiniGPT:
             sender_display = await self.display_name(sender)
             room_id = room.room_id
             
+            #TODO rewrite this section to match ollamarama-matrix updates
             #check if the message was sent after joining and not by the bot
             if message_time > self.join_time and sender != self.username:
                 user = await self.display_name(event.sender)
@@ -307,13 +311,8 @@ class InfiniGPT:
         self.client.add_event_callback(self.message_callback, RoomMessageText)
         await self.client.sync_forever(timeout=30000, full_state=True) 
 
-if __name__ == "__main__":
-    #put a key here and uncomment if not already set in environment
-    #os.environ['OPENAI_API_KEY'] = "api_key"
-
-    api_key = os.environ.get("OPENAI_API_KEY")
-    
-    infinigpt = InfiniGPT(api_key)
+if __name__ == "__main__":    
+    infinigpt = InfiniGPT()
     
     asyncio.get_event_loop().run_until_complete(infinigpt.main())
 

@@ -3,7 +3,7 @@ InfiniGPT is an OpenAI chatbot for the [Matrix](https://matrix.org/) chat protoc
 
 Also available for IRC at [infinigpt-irc](https://github.com/h1ddenpr0cess20/infinigpt-irc/)
 
-Now with Ollama support and model switching.
+Now with Grok and Ollama support, and model switching.
 
 ## Setup
 
@@ -12,7 +12,7 @@ pip3 install matrix-nio openai
 ```
 
 
-Get an [OpenAI API](https://platform.openai.com/signup) key, set it as an environment variable as OPENAI_API_KEY.  There is a place to set the environment variable in the code if you want to use that instead.
+Get an [OpenAI API](https://platform.openai.com/signup) key. Get an [xAI API](https://accounts.x.ai/) key, if you want.  Add those to config.json.
 
 Add desired Ollama models to the models list in config.json, if using.  You'll first need to install and familiarize yourself with [Ollama](https://ollama.ai/), make sure you can run local LLMs, etc.  If you can't, don't worry about it, you can just omit these models from the config.
 
@@ -23,9 +23,7 @@ curl https://ollama.ai/install.sh | sh
 
 Once it's all set up, you'll need to [download the models](https://ollama.ai/library) you want to use.  You can play with the available ones and see what works best for you.  Add those to the config.json file.  If you want to use the ones I've included, just run ollama pull _modelname_ for each.
 
-Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.
-
-Add those to the config.json file.
+Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.  Add those to the config.json file.
 
 ```
 python3 infinigpt.py
