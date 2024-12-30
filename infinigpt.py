@@ -34,7 +34,7 @@ class InfiniGPT:
         self.messages = {}
 
     def change_model(self, modelname):
-        if modelname.startswith("gpt") or modelname.startswith('o1'):
+        if modelname.startswith("gpt"):
             self.openai.base_url = 'https://api.openai.com/v1'
             self.openai.api_key = self.openai_api_key
         elif modelname.startswith("grok"):
@@ -68,36 +68,30 @@ class InfiniGPT:
     # run message through moderation endpoint
     async def moderate(self, message):
         flagged = False
-        if not flagged:
+        if not flagged and self.model.startswith("gpt"):
             try:
                 moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message,) #run through the OpenAI moderation endpoint
                 flagged = moderate.results[0].flagged #true or false
-            except: #will happen with non-OpenAI models
+            except:
                 pass
         return flagged
 
     # add messages to the history dictionary
     async def add_history(self, role, channel, sender, message):
-        #check if channel is in the history yet
-        if channel in self.messages:
-            #check if user is in channel history
-            if sender in self.messages[channel]: 
-                self.messages[channel][sender].append({"role": role, "content": message}) 
+        if channel not in self.messages:
+            self.messages[channel] = {}
+        if sender not in self.messages[channel]:
+            self.messages[channel][sender] = [
+                {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]}
+        ]
+        self.messages[channel][sender].append({"role": role, "content": message})
+
+        #trim history
+        if len(self.messages[channel][sender]) > 24:
+            if self.messages[channel][sender][0]["role"] == "system":
+                del self.messages[channel][sender][1:3]
             else:
-                self.messages[channel][sender] = [
-                    {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
-                    {"role": role, "content": message}]
-        else:
-            #set up channel in history
-            self.messages[channel]= {}
-            self.messages[channel][sender] = {}
-            if role == "system":
-                self.messages[channel][sender] = [{"role": role, "content": message}, {"role": "user", "content": "introduce yourself"}]
-            else: 
-                #add personality to the new user entry
-                self.messages[channel][sender] = [
-                    {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]},
-                    {"role": role, "content": message}]
+                del self.messages[channel][sender][0:2]
 
     # create AI response
     async def respond(self, channel, sender, message, sender2=None):
@@ -134,32 +128,22 @@ class InfiniGPT:
                 await self.send_message(channel, response_text)
             except Exception as e: 
                 print(e)
-                
-            #Shrink history list for token size management (also prevents rate limit error)
-            if len(self.messages[channel][sender]) > 24:
-                if self.messages[channel][sender][0]['role'] == 'system':
-                    del self.messages[channel][sender][1:3] 
-                else:
-                    del self.messages[channel][sender][0:2]
 
-    # change the personality of the bot
-    async def persona(self, channel, sender, persona):
-        #clear existing history
+    #set persona or custom system prompt
+    async def set_prompt(self, channel, sender, persona=None, custom=None, respond=True):
         try:
             await self.messages[channel][sender].clear()
         except:
             pass
-        personality = self.prompt[0] + persona + self.prompt[1]
-        #set system prompt
-        await self.add_history("system", channel, sender, personality)
-        
-    # use a custom system prompt
-    async def custom(self, channel, sender, prompt):
-        try:
-            await self.messages[channel][sender].clear()
-        except:
-            pass
-        await self.add_history("system", channel, sender, prompt) 
+        if persona != None and persona != "":
+            # combine personality with prompt parts
+            prompt = self.prompt[0] + persona + self.prompt[1]
+        if custom != None  and custom != "":
+            prompt = custom
+        await self.add_history("system", channel, sender, prompt)
+        if respond:
+            await self.add_history("user", channel, sender, "introduce yourself")
+            await self.respond(channel, sender, self.messages[channel][sender])
 
     # tracks the messages in channels
     async def message_callback(self, room: MatrixRoom, event: RoomMessageText):
@@ -180,26 +164,26 @@ class InfiniGPT:
                 user = await self.display_name(event.sender)
                 # main AI response functionality
                 if message.startswith(".ai ") or message.startswith(self.bot_id):
-                    m = message.split(" ", 1)
-                    m = m[1]
+                    msg = message.split(" ", 1)
+                    msg = msg[1]
                     # check if it violates ToS
-                    flagged = await self.moderate(m)
+                    flagged = await self.moderate(msg)
                     if flagged:
                         await self.send_message(room_id, f"**{sender_display}**: This message violates the OpenAI usage policy and was not sent.")
                         #add a way to penalize repeated violations here, maybe ignore for x amount of time after three violations
 
                     else:
-                        await self.add_history("user", room_id, sender, m)
+                        await self.add_history("user", room_id, sender, msg)
                         await self.respond(room_id, sender, self.messages[room_id][sender])
 
                 # collaborative functionality
                 if message.startswith(".x "):
-                    m = message.split(" ", 2)
-                    m.pop(0)
-                    if len(m) > 1:
-                        disp_name = m[0]
+                    msg = message.split(" ", 2)
+                    msg.pop(0)
+                    if len(msg) > 1:
+                        disp_name = msg[0]
                         name_id = ""
-                        m = m[1]
+                        msg = msg[1]
                         if room_id in self.messages:
                             for user in self.messages[room_id]:
                                 try:
@@ -208,34 +192,32 @@ class InfiniGPT:
                                         name_id = user
                                 except:
                                     name_id = disp_name
-                            flagged = await self.moderate(m)
+                            flagged = await self.moderate(msg)
                             if flagged:
                                 await self.send_message(room_id, f"**{sender_display}**: This message violates the OpenAI usage policy and was not sent.")
                             else:
-                                await self.add_history("user", room_id, name_id, m)
+                                await self.add_history("user", room_id, name_id, msg)
                                 await self.respond(room_id, name_id, self.messages[room_id][name_id], sender)
 
                 #change personality    
                 if message.startswith(".persona "):
-                    m = message.split(" ", 1)
-                    m = m[1]
-                    flagged = await self.moderate(m)
+                    msg = message.split(" ", 1)
+                    msg = msg[1]
+                    flagged = await self.moderate(msg)
                     if flagged:
                             await self.send_message(room_id, f"**{sender_display}**: This persona violates the OpenAI usage policy and was not set.  Choose a new persona.")
                     else:
-                        await self.persona(room_id, sender, m)
-                        await self.respond(room_id, sender, self.messages[room_id][sender])
+                        await self.set_prompt(room_id, sender, persona=msg)
 
                 #custom system prompt use   
                 if message.startswith(".custom "):
-                    m = message.split(" ", 1)
-                    m = m[1]
-                    flagged = await self.moderate(m)
+                    msg = message.split(" ", 1)
+                    msg = msg[1]
+                    flagged = await self.moderate(msg)
                     if flagged:
                             await self.send_message(room_id, f"**{sender_display}**: This custom prompt violates the OpenAI usage policy and was not set.")
                     else:
-                        await self.custom(room_id, sender, m)
-                        await self.respond(room_id, sender, self.messages[room_id][sender])
+                        await self.set_prompt(room_id, sender, custom=msg)
                 
                 #list models
                 if message.startswith(".model"):
