@@ -246,7 +246,7 @@ class InfiniGPT:
                     if room_id in self.messages:
                         if sender in self.messages[room_id]:
                             self.messages[room_id][sender].clear()
-                            await self.persona(room_id, sender, self.personality)
+                            await self.set_prompt(room_id, sender, persona=self.personality)
                     try:
                         await self.send_message(room_id, f"{self.bot_id} reset to default for {sender_display}")
                     except:
