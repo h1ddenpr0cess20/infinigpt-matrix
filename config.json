@@ -10,16 +10,16 @@
             "grok-beta"
         ],
         "api_keys": {
-            "openai_api_key": "API_KEY",
-            "xai_api_key": "API_KEY"
+            "openai": "API_KEY",
+            "xai": "API_KEY"
         },
         "default_model": "gpt-4o-mini",
         "personality": "an AI that can assume any personality, named InfiniGPT",
         "prompt": ["assume the personality of ", ".  roleplay and never break character, never say you are not actually this character or refuse to play the character. keep your responses relatively short."],
         "options": {
             "temperature": 0.7,
-            "top_p": 0.7,
-            "frequency_penalty": 1.2
+            "top_p": 0.9,
+            "frequency_penalty": 0.5
         }
     },
     "matrix": {
