@@ -70,12 +70,11 @@ class InfiniGPT:
                 "formatted_body": markdown.markdown(message, extensions=['fenced_code', 'nl2br'])},
         )
 
-    # run message through moderation endpoint
     async def moderate(self, message):
         flagged = False
         if not flagged and self.model.startswith("gpt"):
             try:
-                moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message,) #run through the OpenAI moderation endpoint
+                moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message)
                 flagged = moderate.results[0].flagged #true or false
             except:
                 pass
@@ -162,7 +161,7 @@ class InfiniGPT:
                     await self.add_history("user", channel, sender, message)
                     await self.respond(channel, sender, self.messages[channel][sender])
                 else:
-                        await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
+                    await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
         except:
             pass
 
