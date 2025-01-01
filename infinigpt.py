@@ -27,8 +27,6 @@ class InfiniGPT:
 
         self.personality = self.default_personality
         
-        self.join_time = datetime.datetime.now()
-        
         self.messages = {}
         
     async def change_model(self, channel=False, model=False):
@@ -72,16 +70,16 @@ class InfiniGPT:
                 "formatted_body": markdown.markdown(message, extensions=['fenced_code', 'nl2br'])},
         )
 
-    # # run message through moderation endpoint  (disabled for now, gotta figure out how to make it work with rewrite)
-    # async def moderate(self, message):
-    #     flagged = False
-    #     if not flagged and self.model.startswith("gpt"):
-    #         try:
-    #             moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message,) #run through the OpenAI moderation endpoint
-    #             flagged = moderate.results[0].flagged #true or false
-    #         except:
-    #             pass
-    #     return flagged
+    # run message through moderation endpoint
+    async def moderate(self, message):
+        flagged = False
+        if not flagged and self.model.startswith("gpt"):
+            try:
+                moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message,) #run through the OpenAI moderation endpoint
+                flagged = moderate.results[0].flagged #true or false
+            except:
+                pass
+        return flagged
 
     async def add_history(self, role, channel, sender, message):
         if channel not in self.messages:
@@ -140,24 +138,31 @@ class InfiniGPT:
             await self.add_history("user", channel, sender, "introduce yourself")
             await self.respond(channel, sender, self.messages[channel][sender])
 
-    async def ai(self, channel, message, sender, x=False):
+    async def ai(self, channel, message, sender, sender_display, x=False):
         try:
             if x and message[2]:
                 name = message[1]
-                message = message[2:]
-                if channel in self.messages:
-                    for user in self.messages[channel]:
-                        try:
-                            username = await self.display_name(user)
-                            if name == username:
-                                name_id = user
-                        except:
-                            name_id = name
-                    await self.add_history("user", channel, name_id, ' '.join(message))
-                    await self.respond(channel, name_id, self.messages[channel][name_id], sender)
+                message = ' '.join(message[2:])
+                if not await self.moderate(message):
+                    if channel in self.messages:
+                        for user in self.messages[channel]:
+                            try:
+                                username = await self.display_name(user)
+                                if name == username:
+                                    name_id = user
+                            except:
+                                name_id = name
+                        await self.add_history("user", channel, name_id, message)
+                        await self.respond(channel, name_id, self.messages[channel][name_id], sender)
+                    else:
+                        await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
             else:
-                await self.add_history("user", channel, sender, ' '.join(message[1:]))
-                await self.respond(channel, sender, self.messages[channel][sender])
+                message = ' '.join(message[1:])
+                if not await self.moderate(message):
+                    await self.add_history("user", channel, sender, message)
+                    await self.respond(channel, sender, self.messages[channel][sender])
+                else:
+                        await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
         except:
             pass
 
@@ -182,9 +187,9 @@ class InfiniGPT:
 
     async def handle_message(self, message, sender, sender_display, channel):
         user_commands = {
-            ".ai": lambda: self.ai(channel, message, sender),
-            f"{self.bot_id}:": lambda: self.ai(channel, message, sender),
-            ".x": lambda: self.ai(channel, message, sender, x=True),
+            ".ai": lambda: self.ai(channel, message, sender, sender_display),
+            f"{self.bot_id}:": lambda: self.ai(channel, message, sender, sender_display),
+            ".x": lambda: self.ai(channel, message, sender,sender_display, x=True),
             ".persona": lambda: self.set_prompt(channel, sender, persona=' '.join(message[1:])),
             ".custom": lambda: self.set_prompt(channel, sender, custom=' '.join(message[1:])),
             ".reset": lambda: self.reset(channel, sender, sender_display),
@@ -231,7 +236,8 @@ class InfiniGPT:
                 
             except:
                 print(f"Couldn't join {channel}")
-        
+
+        self.join_time = datetime.datetime.now()        
         await self.change_model(model=self.default_model)
 
         self.client.add_event_callback(self.message_callback, RoomMessageText)
