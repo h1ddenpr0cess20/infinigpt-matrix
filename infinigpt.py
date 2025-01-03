@@ -23,7 +23,7 @@ class InfiniGPT:
         self.openai = OpenAI()
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
-        self.openai_api_key, self.xai_api_key = self.api_keys.values()
+        self.openai_api_key, self.xai_api_key, self.google_api_key = self.api_keys.values()
 
         self.personality = self.default_personality
         
@@ -36,9 +36,16 @@ class InfiniGPT:
                     if model.startswith("gpt"):
                         self.openai.base_url = 'https://api.openai.com/v1'
                         self.openai.api_key = self.openai_api_key
+                        self.params = self.options
                     elif model.startswith("grok"):
                         self.openai.base_url = 'https://api.x.ai/v1/'
                         self.openai.api_key = self.xai_api_key
+                        self.params = self.options
+                    elif model.startswith("gemini"):
+                        self.openai.base_url = 'https://generativelanguage.googleapis.com/v1beta/openai/'
+                        self.openai.api_key = self.google_api_key
+                        self.params = self.options
+                        del self.params['frequency_penalty'] #unsupported with gemini
                     else:
                         self.openai.base_url = 'http://localhost:11434/v1'
 
@@ -99,10 +106,8 @@ class InfiniGPT:
         try:
             response = self.openai.chat.completions.create(
                     model=self.model,
-                    temperature=self.options['temperature'],
-                    top_p=self.options['top_p'],
-                    frequency_penalty=self.options['frequency_penalty'],
-                    messages=message)    
+                    messages=message,
+                    **self.params)    
         except Exception as e:
             await self.send_message(channel, "Something went wrong")
             print(e)
