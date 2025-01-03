@@ -7,11 +7,15 @@
             "gpt-4o",
             "gpt-4o-mini",
             "llama3.2:3b-instruct-fp16",
-            "grok-beta"
+            "grok-beta",
+            "gemini-1.5-flash",
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-flash-8b"
         ],
         "api_keys": {
             "openai": "API_KEY",
-            "xai": "API_KEY"
+            "xai": "API_KEY", 
+            "google": "API_KEY"
         },
         "default_model": "gpt-4o-mini",
         "personality": "an AI that can assume any personality, named InfiniGPT",
