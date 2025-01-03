@@ -45,9 +45,11 @@ class InfiniGPT:
                         self.openai.base_url = 'https://generativelanguage.googleapis.com/v1beta/openai/'
                         self.openai.api_key = self.google_api_key
                         self.params = self.options
-                        del self.params['frequency_penalty'] #unsupported with gemini
+                        if 'frequency_penalty' in self.params:
+                            del self.params['frequency_penalty'] #unsupported with gemini
                     else:
                         self.openai.base_url = 'http://localhost:11434/v1'
+                        self.params = self.options
 
                     self.model = self.models[self.models.index(model)]
                     if channel:
