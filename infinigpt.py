@@ -20,10 +20,10 @@ class InfiniGPT:
         
         self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
-        self.openai = OpenAI()
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
         self.openai_api_key, self.xai_api_key, self.google_api_key = self.api_keys.values()
+        self.openai = OpenAI(api_key=self.openai_api_key)
 
         self.personality = self.default_personality
         
@@ -84,7 +84,7 @@ class InfiniGPT:
         if not flagged and self.model.startswith("gpt"):
             try:
                 moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message)
-                flagged = moderate.results[0].flagged #true or false
+                flagged = moderate.results[0].flagged
             except:
                 pass
         return flagged
@@ -118,10 +118,8 @@ class InfiniGPT:
             if response_text.startswith('"') and response_text.endswith('"') and response_text.count('"') == 2:
                 response_text = response_text.strip('"')
             await self.add_history("assistant", channel, sender, response_text)
-            # .x function was used
             if sender2:
                 display_name = await self.display_name(sender2)
-            # .ai was used
             else:
                 display_name = await self.display_name(sender)
             response_text = f"**{display_name}**:\n{response_text.strip()}"
@@ -218,8 +216,7 @@ class InfiniGPT:
         if isinstance(event, RoomMessageText):
             message_time = event.server_timestamp / 1000
             message_time = datetime.datetime.fromtimestamp(message_time)
-            message = event.body
-            message = message.split(" ")
+            message = event.body.split(" ")
             sender = event.sender
             sender_display = await self.display_name(sender)
             channel = room.room_id
