@@ -191,6 +191,11 @@ class InfiniGPT:
             print(e)
         else:
             response_text = response.choices[0].message.content            
+
+            if "<think>" in response_text:
+                thinking, response_text = response_text.split("</think>")
+                print(thinking.replace("<think>", "🤔"))
+
             if response_text.startswith('"') and response_text.endswith('"') and response_text.count('"') == 2:
                 response_text = response_text.strip('"')
             await self.add_history("assistant", channel, sender, response_text)
@@ -216,7 +221,7 @@ class InfiniGPT:
             respond (bool, optional): Whether to generate a response. Defaults to True.
         """
         try:
-            await self.messages[channel][sender].clear()
+            self.messages[channel][sender] = []
         except:
             pass
         if persona != None and persona != "":
@@ -380,6 +385,4 @@ class InfiniGPT:
 
 if __name__ == "__main__":    
     infinigpt = InfiniGPT()
-    
-    asyncio.get_event_loop().run_until_complete(infinigpt.main())
-
+    asyncio.run(infinigpt.main())
