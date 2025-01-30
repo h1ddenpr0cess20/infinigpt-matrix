@@ -191,6 +191,11 @@ class InfiniGPT:
             print(e)
         else:
             response_text = response.choices[0].message.content            
+
+            if "<think>" in response_text:
+                thinking, response_text = response_text.split("</think>")
+                # print(thinking.replace("<think>", "🤔"))
+
             if response_text.startswith('"') and response_text.endswith('"') and response_text.count('"') == 2:
                 response_text = response_text.strip('"')
             await self.add_history("assistant", channel, sender, response_text)
@@ -215,10 +220,10 @@ class InfiniGPT:
             custom (str, optional): Custom system prompt.
             respond (bool, optional): Whether to generate a response. Defaults to True.
         """
-        try:
-            await self.messages[channel][sender].clear()
-        except:
-            pass
+        if channel not in self.messages:
+            self.messages[channel] = {}
+        self.messages[channel][sender] = []
+        
         if persona != None and persona != "":
             prompt = self.prompt[0] + persona + self.prompt[1]
         if custom != None  and custom != "":
@@ -275,12 +280,10 @@ class InfiniGPT:
             sender_display (str): Display name of the sender.
             stock (bool): Whether to reset without setting a system prompt.  Defaults to False.
         """
-        if channel in self.messages:
-            try:
-                self.messages[channel][sender].clear()
-            except:
-                self.messages[channel] = {}
-                self.messages[channel][sender] = []
+        if channel not in self.messages:
+            self.messages[channel] = {}
+        self.messages[channel][sender] = []
+
         if not stock:
             await self.send_message(channel, f"{self.bot_id} reset to default for {sender_display}")
             await self.set_prompt(channel, sender, persona=self.personality, respond=False)
@@ -380,6 +383,4 @@ class InfiniGPT:
 
 if __name__ == "__main__":    
     infinigpt = InfiniGPT()
-    
-    asyncio.get_event_loop().run_until_complete(infinigpt.main())
-
+    asyncio.run(infinigpt.main())
