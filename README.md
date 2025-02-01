@@ -13,52 +13,52 @@ pip install -r requirements.txt
 
 Get an [OpenAI API](https://platform.openai.com/signup) key. Get an [xAI API](https://accounts.x.ai/) key, and a [Google API](https://aistudio.google.com/apikey) key.  Add those to config.json.
 
-Add desired Ollama models to the models list in config.json, if using.  You'll first need to install and familiarize yourself with [Ollama](https://ollama.ai/), make sure you can run local LLMs, etc.  If you can't, don't worry about it, you can just omit these models from the config.
+Edit the model lists in the config to contain only the models you want to use.  
+If you want to use local models, you'll first need to install and familiarize yourself with [Ollama](https://ollama.com/), make sure you can run local LLMs, etc.  If you can't, don't worry about it, you can just omit these models from the config.  
 
 You can install and update it with this command:
 ```
 curl https://ollama.ai/install.sh | sh
 ```
 
-Once it's all set up, you'll need to [download the models](https://ollama.ai/library) you want to use.  You can play with the available ones and see what works best for you.  Add those to the config.json file.  If you want to use the ones I've included, just run ollama pull _modelname_ for each.
+[Download the models](https://ollama.com/search) you want to use and replace the ones I've included as examples in the config.  
+
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.  Add those to the config.json file.
 
 ```
-python3 infinigpt.py
+python infinigpt.py
 ```
 
 ## Use
 
-**.ai _message_ or botname: _message_**
+**.ai _message_ or botname: _message_**  
     Basic usage.
-    Personality is preset by bot operator.
   
-**.x _user message_**
-    This allows you to talk to another user's chat history.
+**.x _user message_**  
+    This allows you to talk to another user's chat history.  
     _user_ is the display name of the user whose history you want to use
       
-**.persona _personality_**
-    Changes the personality.  It can be a character, personality type, object, idea.
-    Don't use a custom prompt here.
+**.persona _personality_**  
+    Changes the personality.  It can be a character, personality type, object, idea, etc. Don't use a custom system prompt here.
 
-**.custom _prompt_**
+**.custom _prompt_**  
     Allows use of a custom system prompt instead of the built-in one
 
-**.reset**
+**.reset**  
     Reset to preset personality
     
-**.stock**
+**.stock**  
     Remove personality and reset to standard GPT settings
 
-**.model**
+**.model**  
     List available large language models
 
-**.model _modelname_**
+**.model _modelname_**  
     Change model
 
-**.model reset**
+**.model reset**  
     Reset model
     
-**.help**
+**.help**  
     Show the built-in help menu
