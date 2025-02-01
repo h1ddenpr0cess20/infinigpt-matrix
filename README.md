@@ -14,11 +14,12 @@ pip install -r requirements.txt
 Get an [OpenAI API](https://platform.openai.com/signup) key. Get an [xAI API](https://accounts.x.ai/) key, and a [Google API](https://aistudio.google.com/apikey) key.  Add those to config.json.
 
 Edit the model lists in the config to contain only the models you want to use.  
+
 If you want to use local models, you'll first need to install and familiarize yourself with [Ollama](https://ollama.com/), make sure you can run local LLMs, etc.  If you can't, don't worry about it, you can just omit these models from the config.  
 
 You can install and update it with this command:
 ```
-curl https://ollama.ai/install.sh | sh
+curl https://ollama.com/install.sh | sh
 ```
 
 [Download the models](https://ollama.com/search) you want to use and replace the ones I've included as examples in the config.  
@@ -56,9 +57,6 @@ python infinigpt.py
 
 **.model _modelname_**  
     Change model
-
-**.model reset**  
-    Reset model
     
 **.help**  
     Show the built-in help menu
