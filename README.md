@@ -7,7 +7,7 @@ Also available for IRC at [infinigpt-irc](https://github.com/h1ddenpr0cess20/inf
 ## Setup
 
 ```
-pip3 install matrix-nio openai 
+pip install -r requirements.txt
 ```
 
 
