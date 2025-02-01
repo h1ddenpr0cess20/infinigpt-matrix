@@ -36,7 +36,7 @@ class InfiniGPT:
         default_model (str): Default model to use.
         default_personality (str): Default personality for the chatbot.
         prompt (list): Default system prompt structure.
-        options (dict): Additional parameters for the API requests(not implemented at the moment).
+        options (dict): Additional parameters for the API requests.
         history_size (int): Maximum number of messages per user to retain for context.
         openai_key (str): OpenAI API key.
         xai_key (str): xAI API key.
@@ -60,6 +60,13 @@ class InfiniGPT:
         self.log = logging.getLogger(__name__).info
 
     async def change_model(self, channel=None, model=None):
+        """
+        Change the active LLM model.
+
+        Args:
+            channel (str, optional): Channel to send feedback messages to.
+            model (str, optional): Desired model to switch to.
+        """
         if model != None:
             for provider, models in self.models.items():
                 if model in models:
