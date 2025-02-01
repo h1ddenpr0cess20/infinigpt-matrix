@@ -7,9 +7,16 @@ Author: Dustin Whyte
 import asyncio
 from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
-from openai import OpenAI
 import json
 import markdown
+import httpx
+import logging
+
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
 
 class InfiniGPT:
     """
@@ -30,11 +37,10 @@ class InfiniGPT:
         default_personality (str): Default personality for the chatbot.
         prompt (list): Default system prompt structure.
         options (dict): Additional parameters for the API requests.
+        history_size (int): Maximum number of messages per user to retain for context.
         openai_key (str): OpenAI API key.
         xai_key (str): xAI API key.
         google_key (str): Google API key.
-        openai: OpenAI client instance.
-        personality (str): Current personality in use.
         messages (dict): History of conversations per channel and user.
     """
     def __init__(self):
@@ -42,56 +48,35 @@ class InfiniGPT:
         self.config_file = "config.json"
         with open(self.config_file, 'r') as f:
             config = json.load(f)
-            f.close()
         
         self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
 
-        self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options = config['llm'].values()
+        self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size = config["llm"].values()
         self.openai_key, self.xai_key, self.google_key = self.api_keys.values()
-        self.openai = OpenAI(api_key=self.openai_key)
-
-        self.personality = self.default_personality
-        
         self.messages = {}
         
-    async def change_model(self, channel=False, model=False):
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        self.log = logging.getLogger(__name__).info
+
+    async def change_model(self, channel=None, model=None):
         """
-        Change the large language model or list available models.
+        Change the active LLM model.
 
         Args:
-            channel (str): Channel ID to respond in. Defaults to False.
-            model (str): The model to switch to. Defaults to False.
+            channel (str, optional): Channel to send feedback messages to.
+            model (str, optional): Desired model to switch to.
         """
-        if model:
-            try:
-                if model in self.models:
-                    if model.startswith("gpt"):
-                        self.openai.base_url = 'https://api.openai.com/v1'
-                        self.openai.api_key = self.openai_key
-                        self.params = self.options
-                    elif model.startswith("grok"):
-                        self.openai.base_url = 'https://api.x.ai/v1/'
-                        self.openai.api_key = self.xai_key
-                        self.params = self.options
-                    elif model.startswith("gemini"):
-                        self.openai.base_url = 'https://generativelanguage.googleapis.com/v1beta/openai/'
-                        self.openai.api_key = self.google_key
-                        self.params = self.options
-                        if 'frequency_penalty' in self.params:
-                            del self.params['frequency_penalty'] #unsupported with gemini
-                    else:
-                        self.openai.base_url = 'http://localhost:11434/v1'
-                        self.params = self.options
-
-                    self.model = self.models[self.models.index(model)]
-                    if channel:
-                        await self.send_message(channel, f"Model set to **{self.model}**")
-            except:
-                pass
+        if model != None:
+            for provider, models in self.models.items():
+                if model in models:
+                    self.model = model
+                    self.log(f"Model set to {self.model}")
+                    if channel != None:
+                        await self.send_message(channel, f"Model set to {self.model}")
         else:
-            if channel:
-                current_model = f"**Current model**: {self.model}\n**Available models**: {', '.join(sorted(list(self.models)))}"
+            if channel != None:
+                current_model = f"**Current model**: {self.model}\n**Available models**: {', '.join([model for provider, models in self.models.items() for model in models])}"
                 await self.send_message(channel, current_model)
 
     async def display_name(self, user):
@@ -108,7 +93,7 @@ class InfiniGPT:
             name = await self.client.get_displayname(user)
             return name.displayname
         except Exception as e:
-            print(e)
+            self.log(e)
 
     async def send_message(self, channel, message):
         """
@@ -128,26 +113,7 @@ class InfiniGPT:
                 "formatted_body": markdown.markdown(message, extensions=['fenced_code', 'nl2br'])},
         )
 
-    async def moderate(self, message):
-        """
-        Check if message violates OpenAI terms of service, if OpenAI used.
-
-        Args:
-            message (str): The message content.
-
-        Returns:
-            bool: Whether or not the message violates OpenAI terms of service.
-        """
-        flagged = False
-        if not flagged and self.model.startswith("gpt"):
-            try:
-                moderate = self.openai.moderations.create(model="omni-moderation-latest", input=message)
-                flagged = moderate.results[0].flagged
-            except:
-                pass
-        return flagged
-
-    async def add_history(self, role, channel, sender, message):
+    async def add_history(self, role, channel, sender, message, default=True):
         """
         Add a message to the interaction history.
 
@@ -156,62 +122,78 @@ class InfiniGPT:
             channel (str): Room ID.
             sender (str): User ID of the sender.
             message (str): Message content.
+            default (bool, optional): Whether to add the default system prompt.
         """
         if channel not in self.messages:
             self.messages[channel] = {}
         if sender not in self.messages[channel]:
-            self.messages[channel][sender] = [
-                {"role": "system", "content": self.prompt[0] + self.personality + self.prompt[1]}
-        ]
+            self.messages[channel][sender] = []
+            if default:
+                self.messages[channel][sender].append({"role": "system", "content": self.prompt[0] + self.default_personality + self.prompt[1]})
         self.messages[channel][sender].append({"role": role, "content": message})
 
-        if len(self.messages[channel][sender]) > 24:
+        if len(self.messages[channel][sender]) > self.history_size:
             if self.messages[channel][sender][0]["role"] == "system":
-                del self.messages[channel][sender][1:3]
+                self.messages[channel][sender].pop(1)
             else:
-                del self.messages[channel][sender][0:2]
+                self.messages[channel][sender].pop(0)
 
-    async def respond(self, channel, sender, message, sender2=None):
+    async def respond(self, sender, messages, sender2=None):
         """
-        Generate and send a response using the OpenAI API.
+        Generate a response using the OpenAI API and separate from reasoning if present
 
         Args:
-            channel (str): Room ID.
             sender (str): User ID of the message sender.
-            message (list): Message history.
+            messages (list): Message history.
             sender2 (str, optional): Additional user ID if .x used.
+
+        Returns:
+            tuple: Name to respond to and the AI response
         """
-        try:
-            response = self.openai.chat.completions.create(
-                    model=self.model,
-                    messages=message,
-                    **self.params)    
-        except Exception as e:
-            await self.send_message(channel, "Something went wrong")
-            print(e)
-        else:
-            response_text = response.choices[0].message.content            
+        display_name = await self.display_name(sender)
+        if self.model in self.models["openai"]:
+            bearer = self.openai_key
+            self.url = "https://api.openai.com/v1"
+        elif self.model in self.models["xai"]:
+            bearer = self.xai_key
+            self.url = "https://api.x.ai/v1"
+        elif self.model in self.models["google"]:
+            bearer = self.google_key
+            self.url = "https://generativelanguage.googleapis.com/v1beta/openai"
+        elif self.model in self.models["ollama"]:
+            bearer = "hello_friend"
+            self.url = "http://localhost:11434/v1"
 
-            if "<think>" in response_text:
-                thinking, response_text = response_text.split("</think>")
-                # print(thinking.replace("<think>", "🤔"))
+        headers = {
+            "Authorization": f"Bearer {bearer}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": self.model,
+            "messages": messages,
+        }
 
-            if response_text.startswith('"') and response_text.endswith('"') and response_text.count('"') == 2:
-                response_text = response_text.strip('"')
-            await self.add_history("assistant", channel, sender, response_text)
-            if sender2:
-                display_name = await self.display_name(sender2)
-            else:
-                display_name = await self.display_name(sender)
-            response_text = f"**{display_name}**:\n{response_text.strip()}"
-            try:
-                await self.send_message(channel, response_text)
-            except Exception as e: 
-                print(e)
+        if self.model not in self.models["google"]:
+            data.update(self.options)
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+            url = f"{self.url}/chat/completions"
+            response = await client.post(url=url, headers=headers, json=data, timeout=180)
+            response.raise_for_status()
+            result = response.json()
+        name = sender2 if sender2 else sender
+        text = result['choices'][0]['message']['content']
+
+        if "<think>" in text:
+            thinking, text = text.split("</think>")
+            thinking = thinking.strip("<think>").strip()
+            self.log(f"Model thinking for {display_name}: {thinking}")
+            
+        return name, text.strip()
 
     async def set_prompt(self, channel, sender, persona=None, custom=None, respond=True):
         """
-        Set a custom or persona-based prompt for a user.
+        Set a custom or persona-based system prompt for a user.
 
         Args:
             channel (str): Room ID.
@@ -220,20 +202,26 @@ class InfiniGPT:
             custom (str, optional): Custom system prompt.
             respond (bool, optional): Whether to generate a response. Defaults to True.
         """
-        if channel not in self.messages:
-            self.messages[channel] = {}
-        self.messages[channel][sender] = []
+        display_name = await self.display_name(sender)
+        if channel in self.messages:
+            if sender in self.messages[channel]:
+                self.messages[channel][sender].clear()
+        if persona != None:
+            system_prompt = self.prompt[0] + persona + self.prompt[1]
+        elif custom != None:
+            system_prompt = custom
         
-        if persona != None and persona != "":
-            prompt = self.prompt[0] + persona + self.prompt[1]
-        if custom != None  and custom != "":
-            prompt = custom
-        await self.add_history("system", channel, sender, prompt)
+        await self.add_history("system", channel, sender, system_prompt, default=False)
+        self.log(f"System prompt for {sender} set to '{system_prompt}'")
+
         if respond:
             await self.add_history("user", channel, sender, "introduce yourself")
-            await self.respond(channel, sender, self.messages[channel][sender])
+            name, text = await self.respond(sender, self.messages[channel][sender])
+            await self.add_history("assistant", channel, name, text)
+            self.log(f"Sending response to {display_name} in {channel}: {text}")
+            await self.send_message(channel, f"**{display_name}**:\n{text}")
 
-    async def ai(self, channel, message, sender, sender_display, x=False):
+    async def ai(self, channel, message, sender, x=False):
         """
         Process AI-related commands and respond accordingly.
 
@@ -243,52 +231,47 @@ class InfiniGPT:
             sender (str): User ID of the sender.
             x (bool): Whether to process cross-user interactions. Defaults to False.
         """
-        try:
-            if x and message[2]:
-                name = message[1]
-                message = ' '.join(message[2:])
-                if not await self.moderate(message):
-                    if channel in self.messages:
-                        for user in self.messages[channel]:
-                            try:
-                                username = await self.display_name(user)
-                                if name == username:
-                                    name_id = user
-                            except:
-                                name_id = name
-                        await self.add_history("user", channel, name_id, message)
-                        await self.respond(channel, name_id, self.messages[channel][name_id], sender)
-                    else:
-                        await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
+        display_name = await self.display_name(sender)
+        self.log(f"{display_name} sent {" ".join(message)} in {channel}")
+        if x and message[2]:
+            target = message[1]
+            message = ' '.join(message[2:])
+            if target in self.messages[channel]:
+                await self.add_history("user", channel, target, message)
+                name, text = await self.respond(target, self.messages[channel][target], sender2=sender)
+                await self.add_history("assistant", channel, target, text)
             else:
-                message = ' '.join(message[1:])
-                if not await self.moderate(message):
-                    await self.add_history("user", channel, sender, message)
-                    await self.respond(channel, sender, self.messages[channel][sender])
-                else:
-                    await self.send_message(channel, f"**{sender_display}**: This message violates OpenAI terms of service and was not sent.")
-        except:
-            pass
+                pass
+        else:
+            message = ' '.join(message[1:])
+            await self.add_history("user", channel, sender, message)
+            name, text = await self.respond(sender, self.messages[channel][sender])
+            await self.add_history("assistant", channel, name, text)
 
-    async def reset(self, channel, sender, sender_display, stock=False):
+        self.log(f"Sending response to {display_name} in {channel}: {text}")
+        await self.send_message(channel, f"**{display_name}**:\n{text}")
+    
+
+    async def reset(self, channel, sender, stock=False):
         """
         Reset the message history for a specific user in a channel, optionally applying stock settings.
 
         Args:
             channel (str): Room ID.
             sender (str): User ID whose history is being reset.
-            sender_display (str): Display name of the sender.
             stock (bool): Whether to reset without setting a system prompt.  Defaults to False.
         """
+        display_name = await self.display_name(sender)
         if channel not in self.messages:
             self.messages[channel] = {}
         self.messages[channel][sender] = []
-
         if not stock:
-            await self.send_message(channel, f"{self.bot_id} reset to default for {sender_display}")
-            await self.set_prompt(channel, sender, persona=self.personality, respond=False)
+            await self.send_message(channel, f"{self.bot_id} reset to default for {display_name}")
+            self.log(f"{self.bot_id} reset to default for {display_name} in {channel}")
+            await self.set_prompt(channel, sender, persona=self.default_personality, respond=False)
         else:
-            await self.send_message(channel, f"Stock settings applied for {sender_display}")
+            await self.send_message(channel, f"Stock settings applied for {display_name}")
+            self.log(f"Stock settings applied for {display_name} in {channel}")
 
     async def help_menu(self, channel):
         """
@@ -302,7 +285,7 @@ class InfiniGPT:
             f.close()
         await self.send_message(channel, help_menu)
 
-    async def handle_message(self, message, sender, sender_display, channel):
+    async def handle_message(self, message, sender, channel):
         """
         Handles messages sent in the channels.
         Parses the message to identify commands or content directed at the bot
@@ -311,21 +294,20 @@ class InfiniGPT:
         Args:
             message (list): Message content split into parts.
             sender (str): User ID of the sender.
-            sender_display (str): Display name of the sender.
             channel (str): Room ID.
         """
         user_commands = {
-            ".ai": lambda: self.ai(channel, message, sender, sender_display),
-            f"{self.bot_id}:": lambda: self.ai(channel, message, sender, sender_display),
-            ".x": lambda: self.ai(channel, message, sender,sender_display, x=True),
+            ".ai": lambda: self.ai(channel, message, sender),
+            f"{self.bot_id}:": lambda: self.ai(channel, message, sender),
+            ".x": lambda: self.ai(channel, message, sender, x=True),
             ".persona": lambda: self.set_prompt(channel, sender, persona=' '.join(message[1:])),
             ".custom": lambda: self.set_prompt(channel, sender, custom=' '.join(message[1:])),
-            ".reset": lambda: self.reset(channel, sender, sender_display),
-            ".stock": lambda: self.reset(channel, sender, sender_display, stock=True),
+            ".reset": lambda: self.reset(channel, sender),
+            ".stock": lambda: self.reset(channel, sender, stock=True),
             ".help": lambda: self.help_menu(channel),
         }
         admin_commands = {
-            ".model": lambda: self.change_model(channel, model=message[1] if len(message) > 1 else False)
+            ".model": lambda: self.change_model(channel, model=message[1] if len(message) > 1 else None)
         }
 
         command = message[0]
@@ -349,12 +331,11 @@ class InfiniGPT:
             message_time = datetime.datetime.fromtimestamp(message_time)
             message = event.body.split(" ")
             sender = event.sender
-            sender_display = await self.display_name(sender)
             channel = room.room_id
 
             if message_time > self.join_time and sender != self.username:
                 try:
-                    await self.handle_message(message, sender, sender_display, channel)
+                    await self.handle_message(message, sender, channel)
                 except:
                     pass
                 
@@ -363,17 +344,15 @@ class InfiniGPT:
         Initialize the chatbot, log into Matrix, join rooms, and start syncing.
 
         """
-        print(await self.client.login(self.password))
-
+        self.log(await self.client.login(self.password))
         self.bot_id = await self.display_name(self.username)
         
         for channel in self.channels:
             try:
                 await self.client.join(channel)
-                print(f"{self.bot_id} joined {channel}")
-                
+                self.log(f"{self.bot_id} joined {channel}")      
             except:
-                print(f"Couldn't join {channel}")
+                self.log(f"Couldn't join {channel}")
 
         self.join_time = datetime.datetime.now()        
         await self.change_model(model=self.default_model)
