@@ -140,7 +140,7 @@ class InfiniGPT:
 
     async def respond(self, sender, messages, sender2=None):
         """
-        Generate and send a response using the OpenAI API.
+        Generate a response using the OpenAI API and separate from reasoning if present
 
         Args:
             sender (str): User ID of the message sender.
@@ -183,15 +183,17 @@ class InfiniGPT:
             result = response.json()
         name = sender2 if sender2 else sender
         text = result['choices'][0]['message']['content']
+
         if "<think>" in text:
             thinking, text = text.split("</think>")
             thinking = thinking.strip("<think>").strip()
             self.log(f"Model thinking for {display_name}: {thinking}")
+            
         return name, text.strip()
 
     async def set_prompt(self, channel, sender, persona=None, custom=None, respond=True):
         """
-        Set a custom or persona-based prompt for a user.
+        Set a custom or persona-based system prompt for a user.
 
         Args:
             channel (str): Room ID.
