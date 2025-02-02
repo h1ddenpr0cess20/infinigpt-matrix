@@ -36,7 +36,9 @@
             "temperature": 0.7,
             "top_p": 0.9,
             "frequency_penalty": 0.5
-        }
+        },
+        "history_size": 24,
+        "ollama_url": "localhost:11434"
     },
     "matrix": {
         "server": "https://matrix.org",

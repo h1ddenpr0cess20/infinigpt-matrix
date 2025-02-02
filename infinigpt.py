@@ -52,7 +52,7 @@ class InfiniGPT:
         self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
 
-        self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size = config["llm"].values()
+        self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
         self.openai_key, self.xai_key, self.google_key = self.api_keys.values()
         self.messages = {}
         
@@ -162,7 +162,7 @@ class InfiniGPT:
             self.url = "https://generativelanguage.googleapis.com/v1beta/openai"
         elif self.model in self.models["ollama"]:
             bearer = "hello_friend"
-            self.url = "http://localhost:11434/v1"
+            self.url = f"http://{self.ollama_url}/v1"
 
         headers = {
             "Authorization": f"Bearer {bearer}",
@@ -188,7 +188,7 @@ class InfiniGPT:
             thinking, text = text.split("</think>")
             thinking = thinking.strip("<think>").strip()
             self.log(f"Model thinking for {display_name}: {thinking}")
-            
+
         return name, text.strip()
 
     async def set_prompt(self, channel, sender, persona=None, custom=None, respond=True):
