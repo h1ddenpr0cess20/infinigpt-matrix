@@ -236,10 +236,18 @@ class InfiniGPT:
         if x and message[2]:
             target = message[1]
             message = ' '.join(message[2:])
-            if target in self.messages[channel]:
-                await self.add_history("user", channel, target, message)
-                name, text = await self.respond(target, self.messages[channel][target], sender2=sender)
-                await self.add_history("assistant", channel, target, text)
+            if channel in self.messages:
+                for user in self.messages[channel]:
+                    try:
+                        username = await self.display_name(user)
+                        if target == username:
+                            target = user
+                    except:
+                        target = name
+                if target in self.messages[channel]:
+                    await self.add_history("user", channel, target, message)
+                    name, text = await self.respond(target, self.messages[channel][target], sender2=sender)
+                    await self.add_history("assistant", channel, target, text)
             else:
                 pass
         else:
