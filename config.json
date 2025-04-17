@@ -2,26 +2,29 @@
     "llm": {
         "models": {
             "openai": [
-                "gpt-3.5-turbo",
-                "gpt-4-turbo",
-                "gpt-4",
                 "gpt-4o",
-                "gpt-4o-mini"
+                "gpt-4o-mini",
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano"
             ],
             "xai": [
                 "grok-beta",
-                "grok-2"
+                "grok-2",
+                "grok-3-mini-beta",
+                "grok-3-mini-fast-beta",
+                "grok-3-beta",
+                "grok-3-fast-beta"
             ],
             "google": [
-                "gemini-1.5-flash",
-                "gemini-1.5-flash-8b",
                 "gemini-2.0-flash-exp", 
-                "gemini-2.0-flash-thinking-exp"
+                "gemini-2.0-flash-thinking-exp",
+                "gemini-2.5-pro-preview-03-25"
             ],
             "ollama": [
-                "llama3.2:3b-instruct-fp16",
-                "phi4",
-                "deepseek-r1:14b-qwen-distill-q4_K_M"
+                "llama3.2",
+                "qwen2.5:14b",
+                "qwen2.5:32b"
             ]
         },
         "api_keys": {
@@ -29,7 +32,7 @@
             "xai": "API_KEY", 
             "google": "API_KEY"
         },
-        "default_model": "gpt-4o-mini",
+        "default_model": "gpt-4.1-nano",
         "personality": "an AI that can assume any personality, named InfiniGPT",
         "prompt": ["assume the personality of ", ".  roleplay and never break character, never say you are not actually this character or refuse to play the character. keep your responses relatively short."],
         "options": {

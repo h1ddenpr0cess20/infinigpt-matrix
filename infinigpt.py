@@ -11,8 +11,10 @@ import json
 import markdown
 import httpx
 import logging
-
 import logging.config
+
+from tools import *
+
 logging.config.dictConfig({
     'version': 1,
     'disable_existing_loggers': True,
@@ -38,22 +40,26 @@ class InfiniGPT:
         prompt (list): Default system prompt structure.
         options (dict): Additional parameters for the API requests.
         history_size (int): Maximum number of messages per user to retain for context.
+        ollama_url (str): URL for the Ollama server, default is localhost.
         openai_key (str): OpenAI API key.
         xai_key (str): xAI API key.
         google_key (str): Google API key.
+        mistral_key (str): Mistral API key.
         messages (dict): History of conversations per channel and user.
+        tools (list): List of available tools.
     """
     def __init__(self):
         """Initialize InfiniGPT by loading configuration and setting up attributes."""
         self.config_file = "config.json"
         with open(self.config_file, 'r') as f:
             config = json.load(f)
-        
+        with open("schema.json") as f:
+            self.tools = json.load(f)
         self.server, self.username, self.password, self.channels, self.admin = config['matrix'].values()
         self.client = AsyncClient(self.server, self.username)
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
-        self.openai_key, self.xai_key, self.google_key = self.api_keys.values()
+        self.openai_key, self.xai_key, self.google_key, self.mistral_key = self.api_keys.values()
         self.messages = {}
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -110,7 +116,7 @@ class InfiniGPT:
                 "msgtype": "m.text", 
                 "body": message,
                 "format": "org.matrix.custom.html",
-                "formatted_body": markdown.markdown(message, extensions=['fenced_code', 'nl2br'])},
+                "formatted_body": markdown.markdown(message, extensions=['extra', 'fenced_code', 'nl2br', 'sane_lists', 'tables', 'codehilite', 'wikilinks', 'footnotes'])},
         )
 
     async def add_history(self, role, channel, sender, message, default=True):
@@ -133,12 +139,15 @@ class InfiniGPT:
         self.messages[channel][sender].append({"role": role, "content": message})
 
         if len(self.messages[channel][sender]) > self.history_size:
+            
             if self.messages[channel][sender][0]["role"] == "system":
                 self.messages[channel][sender].pop(1)
             else:
                 self.messages[channel][sender].pop(0)
 
-    async def respond(self, sender, messages, sender2=None):
+            self.messages[channel][sender] = [m for m in self.messages[channel][sender] if not ((m['role'] == "tool") or ('tool_calls' in m))]
+    
+    async def respond(self, channel, sender, messages, sender2=None):
         """
         Generate a response using the OpenAI API and separate from reasoning if present
 
@@ -151,6 +160,7 @@ class InfiniGPT:
             tuple: Name to respond to and the AI response
         """
         display_name = await self.display_name(sender)
+
         if self.model in self.models["openai"]:
             bearer = self.openai_key
             self.url = "https://api.openai.com/v1"
@@ -160,6 +170,9 @@ class InfiniGPT:
         elif self.model in self.models["google"]:
             bearer = self.google_key
             self.url = "https://generativelanguage.googleapis.com/v1beta/openai"
+        elif self.model in self.models["mistral"]:
+            bearer = self.mistral_key
+            self.url = "https://api.mistral.ai/v1"
         elif self.model in self.models["ollama"]:
             bearer = "hello_friend"
             self.url = f"http://{self.ollama_url}/v1"
@@ -171,25 +184,64 @@ class InfiniGPT:
         data = {
             "model": self.model,
             "messages": messages,
+            "tools": self.tools
         }
 
         if self.model not in self.models["google"]:
             data.update(self.options)
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
-            url = f"{self.url}/chat/completions"
-            response = await client.post(url=url, headers=headers, json=data, timeout=180)
-            response.raise_for_status()
-            result = response.json()
+        async def get_completion(data):
+            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+                response = await client.post(
+                    url,
+                    headers=headers,
+                    json=data
+                )
+                return response.json()
+
         name = sender2 if sender2 else sender
+        url = f"{self.url}/chat/completions"
+
+        result = await get_completion(data)
+        max_iterations = 10
+        iterations = 0
+        while result['choices'][0]['message'].get('tool_calls', []) and iterations < max_iterations:
+            msg = result['choices'][0]['message']
+            self.messages[channel][sender].append(msg)
+            tool_calls = msg.get('tool_calls', [])
+            for tool_call in tool_calls:
+                tool_name = tool_call['function']['name']
+                args = json.loads(tool_call['function']['arguments'])
+                self.log(f"Calling tool: {tool_name} with args: {args}")
+                try:
+                    tool_result = await globals()[tool_name](**args)
+                except Exception as e:
+                    self.log(f"Error calling tool {tool_name}: {e}")
+                    tool_result = f"Error calling tool {tool_name}: {e}"
+                self.messages[channel][sender].append({
+                    "role": "tool",
+                    "tool_call_id": tool_call['id'],
+                    "content": tool_result
+                })
+            data["messages"] = self.messages[channel][sender]
+            result = await get_completion(data)
+            iterations += 1
+            
+        if iterations >= max_iterations:
+            self.log(f"WARNING: Tool calls reached maximum iterations ({max_iterations}) for {sender} in {channel}. Response may be incomplete.")
+
+        iterations = 0
+        while result['choices'][0]['message'].get('content') in [None, '', '\n'] and iterations < max_iterations:
+            data["messages"] = self.messages[channel][sender]
+            result = await get_completion(data)
+            iterations += 1
+            
+        if iterations >= max_iterations:
+            self.log(f"WARNING: Empty content handling reached maximum iterations ({max_iterations}) for {sender} in {channel}. Response may be incomplete.")
+            
         text = result['choices'][0]['message']['content']
-
-        if "<think>" in text:
-            thinking, text = text.split("</think>")
-            thinking = thinking.strip("<think>").strip()
-            self.log(f"Model thinking for {display_name}: {thinking}")
-
         return name, text.strip()
+
 
     async def set_prompt(self, channel, sender, persona=None, custom=None, respond=True):
         """
@@ -216,7 +268,7 @@ class InfiniGPT:
 
         if respond:
             await self.add_history("user", channel, sender, "introduce yourself")
-            name, text = await self.respond(sender, self.messages[channel][sender])
+            name, text = await self.respond(channel, sender, self.messages[channel][sender])
             await self.add_history("assistant", channel, name, text)
             self.log(f"Sending response to {display_name} in {channel}: {text}")
             await self.send_message(channel, f"**{display_name}**:\n{text}")
@@ -236,16 +288,24 @@ class InfiniGPT:
         if x and message[2]:
             target = message[1]
             message = ' '.join(message[2:])
+            if channel in self.messages:
+                for user in self.messages[channel]:
+                    try:
+                        username = await self.display_name(user)
+                        if target == username:
+                            target = user
+                    except:
+                        target = name
             if target in self.messages[channel]:
                 await self.add_history("user", channel, target, message)
-                name, text = await self.respond(target, self.messages[channel][target], sender2=sender)
+                name, text = await self.respond(channel, target, self.messages[channel][target], sender2=sender)
                 await self.add_history("assistant", channel, target, text)
             else:
                 pass
         else:
             message = ' '.join(message[1:])
             await self.add_history("user", channel, sender, message)
-            name, text = await self.respond(sender, self.messages[channel][sender])
+            name, text = await self.respond(channel, sender, self.messages[channel][sender])
             await self.add_history("assistant", channel, name, text)
 
         self.log(f"Sending response to {display_name} in {channel}: {text}")
