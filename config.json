@@ -21,6 +21,12 @@
                 "gemini-2.0-flash-thinking-exp",
                 "gemini-2.5-pro-preview-03-25"
             ],
+            "mistral": [
+                "codestral-latest",
+                "mistral-large-latest",
+                "mistral-medium-latest",
+                "mistral-small-latest"
+            ],
             "ollama": [
                 "llama3.2",
                 "qwen2.5:14b",
@@ -30,7 +36,8 @@
         "api_keys": {
             "openai": "API_KEY",
             "xai": "API_KEY", 
-            "google": "API_KEY"
+            "google": "API_KEY",
+            "mistral": "API_KEY"
         },
         "default_model": "gpt-4.1-nano",
         "personality": "an AI that can assume any personality, named InfiniGPT",
