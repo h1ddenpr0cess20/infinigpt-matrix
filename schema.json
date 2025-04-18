@@ -1,0 +1,23 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "crypto_prices",
+            "description": "Fetches price info for a currency pair, eg BTC-USD.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The currency pair for which the information is being fetched."
+                    }
+                },
+                "required": [
+                    "product_id"
+                ],
+                "additionalProperties": false
+            },
+            "strict": false
+        }
+    }
+]
