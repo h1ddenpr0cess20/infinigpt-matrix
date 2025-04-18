@@ -296,10 +296,12 @@ class InfiniGPT:
                             target = user
                     except:
                         target = name
+
             if target in self.messages[channel]:
                 await self.add_history("user", channel, target, message)
                 name, text = await self.respond(channel, target, self.messages[channel][target], sender2=sender)
                 await self.add_history("assistant", channel, target, text)
+
             else:
                 pass
         else:
