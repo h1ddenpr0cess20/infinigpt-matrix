@@ -7,7 +7,7 @@ anyio==4.8.0
 attrs==25.1.0
 certifi==2025.1.31
 frozenlist==1.5.0
-h11==0.14.0
+h11==0.16.0
 h2==4.1.0
 hpack==4.1.0
 httpcore==1.0.7
