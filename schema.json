@@ -19,5 +19,68 @@
             },
             "strict": false
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_image",
+            "description": "Generates an image using OpenAI's gpt-image-1 image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            },
+            "strict": false
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "grok_image",
+            "description": "Generates an image using xAI (Grok) image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            },
+            "strict": false
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "gemini_image",
+            "description": "Generates an image using Google Gemini image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            },
+            "strict": false
+        }
     }
 ]
