@@ -12,6 +12,8 @@ import markdown
 import httpx
 import logging
 import logging.config
+import mimetypes
+import os
 
 from tools import *
 
@@ -45,6 +47,7 @@ class InfiniGPT:
         xai_key (str): xAI API key.
         google_key (str): Google API key.
         mistral_key (str): Mistral API key.
+        anthropic_key (str): Anthropic API key.
         messages (dict): History of conversations per channel and user.
         tools (list): List of available tools.
     """
@@ -59,7 +62,7 @@ class InfiniGPT:
         self.client = AsyncClient(self.server, self.username)
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
-        self.openai_key, self.xai_key, self.google_key, self.mistral_key = self.api_keys.values()
+        self.openai_key, self.xai_key, self.google_key, self.mistral_key, self.anthropic_key = self.api_keys.values()
         self.messages = {}
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -119,6 +122,63 @@ class InfiniGPT:
                 "formatted_body": markdown.markdown(message, extensions=['extra', 'fenced_code', 'nl2br', 'sane_lists', 'tables', 'codehilite', 'wikilinks', 'footnotes'])},
         )
 
+    async def send_image(self, channel, image_url=None, filename=None):
+        """
+        Send an image to a Matrix room using a local file.
+
+        Args:
+            channel (str): Room ID.
+            image_url (str): Local file path of the image to send.
+            filename (str, optional): Filename for the image.
+        """
+        if not image_url or not os.path.exists(image_url):
+            self.log(f"Error sending image: File path '{image_url}' is invalid or file does not exist.")
+            await self.send_message(channel, f"Error: Could not find image file at {image_url}")
+            return
+
+        if not filename:
+            filename = os.path.basename(image_url)
+
+        mime_type = mimetypes.guess_type(image_url)[0] or "application/octet-stream"
+        file_stat = os.stat(image_url)
+
+        try:
+            with open(image_url, "rb") as image_file:
+                upload_response, _ = await self.client.upload(
+                    image_file,
+                    content_type=mime_type,
+                    filename=filename,
+                    filesize=file_stat.st_size
+                )
+
+            if not upload_response or not hasattr(upload_response, 'content_uri'):
+                self.log(f"Failed to upload image: Invalid response from server. Response: {upload_response}")
+                await self.send_message(channel, f"Failed to upload image '{filename}'. Server response was invalid.")
+                return
+
+            content_uri = upload_response.content_uri
+
+            content = {
+                "body": filename,
+                "info": {
+                    "mimetype": mime_type,
+                    "size": file_stat.st_size
+                },
+                "msgtype": "m.image",
+                "url": content_uri
+            }
+
+            await self.client.room_send(
+                room_id=channel,
+                message_type="m.room.message",
+                content=content
+            )
+            self.log(f"Sent image {filename} to {channel}")
+
+        except Exception as e:
+            self.log(f"Error sending image to {channel}: {e}")
+            await self.send_message(channel, f"Sorry, an error occurred while trying to send the image: {str(e)}")
+
     async def add_history(self, role, channel, sender, message, default=True):
         """
         Add a message to the interaction history.
@@ -173,6 +233,9 @@ class InfiniGPT:
         elif self.model in self.models["mistral"]:
             bearer = self.mistral_key
             self.url = "https://api.mistral.ai/v1"
+        elif self.model in self.models['anthropic']:
+            bearer = self.anthropic_key
+            self.url = "https://api.anthropic.com/v1"
         elif self.model in self.models["ollama"]:
             bearer = "hello_friend"
             self.url = f"http://{self.ollama_url}/v1"
@@ -215,13 +278,15 @@ class InfiniGPT:
                 self.log(f"Calling tool: {tool_name} with args: {args}")
                 try:
                     tool_result = await globals()[tool_name](**args)
+                    if isinstance(tool_result, str) and tool_result.lower().endswith(".png"):
+                        await self.send_image(channel, image_url=tool_result)
                 except Exception as e:
                     self.log(f"Error calling tool {tool_name}: {e}")
                     tool_result = f"Error calling tool {tool_name}: {e}"
                 self.messages[channel][sender].append({
                     "role": "tool",
                     "tool_call_id": tool_call['id'],
-                    "content": tool_result
+                    "content": str(tool_result)
                 })
             data["messages"] = self.messages[channel][sender]
             result = await get_completion(data)
@@ -240,6 +305,12 @@ class InfiniGPT:
             self.log(f"WARNING: Empty content handling reached maximum iterations ({max_iterations}) for {sender} in {channel}. Response may be incomplete.")
             
         text = result['choices'][0]['message']['content']
+
+        if "<think>" in text:
+            thinking, text = text.split("</think>")
+            thinking = thinking.strip("<think>").strip()
+            self.log(f"Model thinking for {display_name}: {thinking}")
+
         return name, text.strip()
 
 

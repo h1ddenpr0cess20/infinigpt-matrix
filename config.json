@@ -27,17 +27,22 @@
                 "mistral-medium-latest",
                 "mistral-small-latest"
             ],
+            "anthropic": [
+                "claude-3-5-sonnet-latest",
+                "claude-3-7-sonnet-latest"
+            ],
             "ollama": [
                 "llama3.2",
-                "qwen2.5:14b",
-                "qwen2.5:32b"
+                "qwen3:14b",
+                "qwen3"
             ]
         },
         "api_keys": {
             "openai": "API_KEY",
             "xai": "API_KEY", 
             "google": "API_KEY",
-            "mistral": "API_KEY"
+            "mistral": "API_KEY",
+            "anthropic": "API_KEY"
         },
         "default_model": "gpt-4.1-nano",
         "personality": "an AI that can assume any personality, named InfiniGPT",
