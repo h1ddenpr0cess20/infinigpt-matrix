@@ -2,7 +2,6 @@
 
 import httpx
 import json
-
 import base64
 import datetime
 
@@ -11,9 +10,10 @@ async def crypto_prices(product_id):
     response = httpx.get(url, headers={'Content-Type': 'application/json'})
     return json.dumps(response.json())
 
-async def generate_image(prompt):
+
+async def openai_image(prompt, quality="medium"):
     url = "https://api.openai.com/v1/images/generations"
-    with open("config_test.json", 'r') as f:
+    with open("config.json", 'r') as f:
         config = json.load(f)
     openai_key = config['llm']['api_keys']['openai']
     headers = {
@@ -25,7 +25,7 @@ async def generate_image(prompt):
         "prompt": prompt,
         "n": 1,
         "moderation": "low",
-        "quality": "medium",
+        "quality": quality,
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=data, headers=headers, timeout=httpx.Timeout(180.0))
@@ -42,13 +42,13 @@ async def generate_image(prompt):
             
             image_data = base64.b64decode(b64_data)
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            file_path = f"generated_image_{timestamp}.png"
+            file_path = f"./images/openai_image_{timestamp}.png"
             with open(file_path, "wb") as image_file:
                 image_file.write(image_data)
             return file_path
-        
+
 async def grok_image(prompt, model="grok-2-image-1212"):
-    with open("config_test.json", "r") as f:
+    with open("config.json", "r") as f:
         api_key = json.load(f)["llm"]["api_keys"]["xai"]
 
     url = "https://api.x.ai/v1/images/generations"
@@ -63,13 +63,13 @@ async def grok_image(prompt, model="grok-2-image-1212"):
         img.raise_for_status()
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"generated_image_{timestamp}.png"
+    filename = f"./images/grok_image_{timestamp}.png"
     with open(filename, "wb") as f:
         f.write(img.content)
     return filename
 
 async def gemini_image(prompt, model="gemini-2.0-flash-exp-image-generation"):
-    with open("config_test.json", "r") as f:
+    with open("config.json", "r") as f:
         api_key = json.load(f)["llm"]["api_keys"]["google"]
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -85,34 +85,77 @@ async def gemini_image(prompt, model="gemini-2.0-flash-exp-image-generation"):
         img_bytes = base64.b64decode(data_b64)
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"gemini_image_{timestamp}.png"
+    filename = f"./images/gemini_image_{timestamp}.png"
     with open(filename, "wb") as f:
         f.write(img_bytes)
     return filename
 
-# async def imagen3_image(prompt, sample_count=1, model="imagen-3.0-generate-002"):
-#     with open("config_test.json", "r") as f:
-#         api_key = json.load(f)["llm"]["api_keys"]["google"]
+async def openai_search(query: str):
+    """
+    Perform a web search using OpenAI's gpt-4o-mini-search-preview model and return structured search results.
+    """
+    url = "https://api.openai.com/v1/chat/completions"
+    with open("config.json", "r") as f:
+        openai_key = json.load(f)["llm"]["api_keys"]["openai"]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {openai_key}"
+    }
+    data = {
+        "model": "gpt-4o-mini-search-preview",
+        "messages": [
+            {"role": "user", "content": query}
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "search_results",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "The search query that was executed."},
+                        "total_results": {"type": "number", "description": "The total number of results found for the query."},
+                        "results": {
+                            "type": "array",
+                            "description": "An array of result objects that match the search query.",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string", "description": "The title of the search result."},
+                                    "url": {"type": "string", "description": "The URL of the search result."},
+                                    "snippet": {"type": "string", "description": "A brief snippet or summary of the search result."}
+                                },
+                                "required": ["title", "url", "snippet"],
+                                "additionalProperties": False
+                            }
+                        },
+                        "timestamp": {"type": "string", "description": "The time when the search was performed."}
+                    },
+                    "required": ["query", "total_results", "results", "timestamp"],
+                    "additionalProperties": False
+                }
+            }
+        },
+        "web_search_options": {
+            "search_context_size": "medium",
+            "user_location": {
+                "type": "approximate",
+                "approximate": {
+                    "country": "",
+                    "timezone": "America/New_York"
+                }
+            }
+        },
+        "store": False
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=data, timeout=httpx.Timeout(60.0))
+        try:
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            return {"error": f"HTTP error occurred: {e.response.status_code} - {e.response.text}"}
+        except Exception as e:
+            return {"error": f"An unexpected error occurred: {str(e)}"}
 
-#     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict?key={api_key}"
-#     payload = {
-#         "instances": [{"prompt": prompt}],
-#         "parameters": {"sampleCount": sample_count}
-#     }
-
-#     with httpx.Client() as client:
-#         res = client.post(url, json=payload, timeout=60)
-#         res.raise_for_status()
-#         outputs = res.json()["predictions"]
-
-#     filenames = []
-#     for i, item in enumerate(outputs):
-#         img_b64 = item["bytesBase64"]
-#         img_bytes = base64.b64decode(img_b64)
-#         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-#         filename = f"imagen3_image_{timestamp}_{i+1}.png"
-#         with open(filename, "wb") as f:
-#             f.write(img_bytes)
-        
-
-#     return filenames[0]
