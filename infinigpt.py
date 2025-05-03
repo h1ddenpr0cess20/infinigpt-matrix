@@ -211,7 +211,6 @@ class InfiniGPT:
     
     async def set_user_model(self, channel, sender, model=None):
         """
-        
         Set or show the LLM model for a specific user in a channel.
 
         Args:
@@ -222,6 +221,11 @@ class InfiniGPT:
         """
         display_name = await self.display_name(sender)
         if model is not None:
+            ollama_models = self.models.get('ollama', [])
+            if model in ollama_models:
+                if not (hasattr(self, 'model') and self.model in ollama_models and model == self.model):
+                    await self.send_message(channel, "You cannot set an Ollama model unless it matches the current global model. Please ask an admin to change the global model first.")
+                    return
             for provider, models in self.models.items():
                 if model in models:
                     if channel not in self.user_models:
