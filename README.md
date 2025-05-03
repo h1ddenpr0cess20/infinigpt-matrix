@@ -29,6 +29,13 @@ Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need th
 
 Add your own tools to the `tools.py` file and add the schema to the `schema.json` file.
 
+Current tools included:
+- crypto_prices: Fetches price info for a currency pair (e.g., BTC-USD)
+- openai_image: Generates images using OpenAI's image API
+- grok_image: Generates images using xAI (Grok) image API
+- gemini_image: Generates images using Google Gemini image API
+- openai_search: Performs a web search using OpenAI's search model
+
 ```
 python infinigpt.py
 ```
@@ -60,5 +67,11 @@ python infinigpt.py
 **.model _modelname_**  
     Change model
     
+**.mymodel**  
+    List available large language models for yourself and show your current model
+
+**.mymodel _modelname_**  
+    Change your model (only affects your own responses)
+
 **.help**  
     Show the built-in help menu

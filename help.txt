@@ -23,4 +23,10 @@
 **.model** *modelname*
     Change model
 
+**.mymodel**
+    List available large language models for yourself and show your current model
+
+**.mymodel** *modelname*
+    Change your model (only affects your own responses)
+
 Available at https://github.com/h1ddenpr0cess20/infinigpt-matrix    
