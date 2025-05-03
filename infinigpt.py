@@ -50,6 +50,7 @@ class InfiniGPT:
         anthropic_key (str): Anthropic API key.
         messages (dict): History of conversations per channel and user.
         tools (list): List of available tools.
+        user_models (dict): {channel: {user: model}}
     """
     def __init__(self):
         """Initialize InfiniGPT by loading configuration and setting up attributes."""
@@ -64,6 +65,7 @@ class InfiniGPT:
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
         self.openai_key, self.xai_key, self.google_key, self.mistral_key, self.anthropic_key = self.api_keys.values()
         self.messages = {}
+        self.user_models = {}  # {channel: {user: model}}
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.log = logging.getLogger(__name__).info
@@ -207,6 +209,34 @@ class InfiniGPT:
 
             self.messages[channel][sender] = [m for m in self.messages[channel][sender] if not ((m['role'] == "tool") or ('tool_calls' in m))]
     
+    async def set_user_model(self, channel, sender, model=None):
+        """
+        
+        Set or show the LLM model for a specific user in a channel.
+
+        Args:
+            channel (str): The Matrix room ID.
+            sender (str): The user ID of the person whose model is being set or shown.
+            model (str, optional): The name of the model to set for the user. If None, shows the current model and available models.
+
+        """
+        display_name = await self.display_name(sender)
+        if model is not None:
+            for provider, models in self.models.items():
+                if model in models:
+                    if channel not in self.user_models:
+                        self.user_models[channel] = {}
+                    self.user_models[channel][sender] = model
+                    self.log(f"Model for {display_name} ({sender}) in {channel} set to {model}")
+                    await self.send_message(channel, f"Model for {display_name} set to {model}")
+                    return
+            await self.send_message(channel, f"Model '{model}' not found. Available: {', '.join([m for ms in self.models.values() for m in ms])}")
+        else:
+            # Show current model and available models
+            user_model = self.user_models.get(channel, {}).get(sender, getattr(self, 'model', self.default_model))
+            current_model = f"**Your current model**: {user_model}\n**Available models**: {', '.join([model for provider, models in self.models.items() for model in models])}"
+            await self.send_message(channel, current_model)
+
     async def respond(self, channel, sender, messages, sender2=None):
         """
         Generate a response using the OpenAI API and separate from reasoning if present
@@ -220,37 +250,38 @@ class InfiniGPT:
             tuple: Name to respond to and the AI response
         """
         display_name = await self.display_name(sender)
-
-        if self.model in self.models["openai"]:
+        # Use per-user model if set, else default
+        model = self.user_models.get(channel, {}).get(sender, getattr(self, 'model', self.default_model))
+        if model in self.models["openai"]:
             bearer = self.openai_key
-            self.url = "https://api.openai.com/v1"
-        elif self.model in self.models["xai"]:
+            url_base = "https://api.openai.com/v1"
+        elif model in self.models["xai"]:
             bearer = self.xai_key
-            self.url = "https://api.x.ai/v1"
-        elif self.model in self.models["google"]:
+            url_base = "https://api.x.ai/v1"
+        elif model in self.models["google"]:
             bearer = self.google_key
-            self.url = "https://generativelanguage.googleapis.com/v1beta/openai"
-        elif self.model in self.models["mistral"]:
+            url_base = "https://generativelanguage.googleapis.com/v1beta/openai"
+        elif model in self.models["mistral"]:
             bearer = self.mistral_key
-            self.url = "https://api.mistral.ai/v1"
-        elif self.model in self.models['anthropic']:
+            url_base = "https://api.mistral.ai/v1"
+        elif model in self.models['anthropic']:
             bearer = self.anthropic_key
-            self.url = "https://api.anthropic.com/v1"
-        elif self.model in self.models["ollama"]:
+            url_base = "https://api.anthropic.com/v1"
+        elif model in self.models["ollama"]:
             bearer = "hello_friend"
-            self.url = f"http://{self.ollama_url}/v1"
+            url_base = f"http://{self.ollama_url}/v1"
 
         headers = {
             "Authorization": f"Bearer {bearer}",
             "Content-Type": "application/json"
         }
         data = {
-            "model": self.model,
+            "model": model,
             "messages": messages,
             "tools": self.tools
         }
 
-        if self.model not in self.models["google"]:
+        if model not in self.models["google"]:
             data.update(self.options)
 
         async def get_completion(data):
@@ -263,7 +294,7 @@ class InfiniGPT:
                 return response.json()
 
         name = sender2 if sender2 else sender
-        url = f"{self.url}/chat/completions"
+        url = f"{url_base}/chat/completions"
 
         result = await get_completion(data)
         max_iterations = 10
@@ -367,12 +398,10 @@ class InfiniGPT:
                             target = user
                     except:
                         target = name
-
             if target in self.messages[channel]:
                 await self.add_history("user", channel, target, message)
                 name, text = await self.respond(channel, target, self.messages[channel][target], sender2=sender)
                 await self.add_history("assistant", channel, target, text)
-
             else:
                 pass
         else:
@@ -438,6 +467,7 @@ class InfiniGPT:
             ".reset": lambda: self.reset(channel, sender),
             ".stock": lambda: self.reset(channel, sender, stock=True),
             ".help": lambda: self.help_menu(channel),
+            ".mymodel": lambda: self.set_user_model(channel, sender, message[1] if len(message) > 1 else None),
         }
         admin_commands = {
             ".model": lambda: self.change_model(channel, model=message[1] if len(message) > 1 else None)
