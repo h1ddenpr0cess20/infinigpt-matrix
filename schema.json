@@ -23,7 +23,7 @@
     {
         "type": "function",
         "function": {
-            "name": "generate_image",
+            "name": "openai_image",
             "description": "Generates an image using OpenAI's gpt-image-1 image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
             "parameters": {
                 "type": "object",
@@ -31,6 +31,15 @@
                     "prompt": {
                         "type": "string",
                         "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    },
+                    "quality": {
+                        "type": "string",
+                        "description": "The quality of the image to generate.  Default is 'medium'.",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ]
                     }
                 },
                 "required": [
@@ -78,6 +87,25 @@
                 "required": [
                     "prompt"
                 ],
+                "additionalProperties": false
+            },
+            "strict": false
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "openai_search",
+            "description": "Performs a web search using OpenAI's gpt-4o-mini-search-preview model and returns structured search results.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query to execute formulated from the user's request and conversation context"
+                    }
+                },
+                "required": ["query"],
                 "additionalProperties": false
             },
             "strict": false
