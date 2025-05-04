@@ -315,6 +315,10 @@ class InfiniGPT:
                     tool_result = await globals()[tool_name](**args)
                     if isinstance(tool_result, str) and tool_result.lower().endswith(".png"):
                         await self.send_image(channel, image_url=tool_result)
+                except TypeError as e:
+                    error_msg = f"Invalid parameters for tool {tool_name}: {e}"
+                    self.log(error_msg)
+                    tool_result = error_msg
                 except Exception as e:
                     self.log(f"Error calling tool {tool_name}: {e}")
                     tool_result = f"Error calling tool {tool_name}: {e}"
