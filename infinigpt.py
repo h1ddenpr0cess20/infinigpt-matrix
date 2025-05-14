@@ -17,10 +17,6 @@ import os
 
 from tools import *
 
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': True,
-})
 
 class InfiniGPT:
     """
@@ -50,9 +46,16 @@ class InfiniGPT:
         anthropic_key (str): Anthropic API key.
         messages (dict): History of conversations per channel and user.
         tools (list): List of available tools.
+        tools_enabled (bool): Whether tools are enabled.
         user_models (dict): {channel: {user: model}}
     """
     def __init__(self):
+
+        logging.config.dictConfig({
+            'version': 1,
+            'disable_existing_loggers': True,
+        })
+
         """Initialize InfiniGPT by loading configuration and setting up attributes."""
         self.config_file = "config.json"
         with open(self.config_file, 'r') as f:
@@ -66,6 +69,7 @@ class InfiniGPT:
         self.openai_key, self.xai_key, self.google_key, self.mistral_key, self.anthropic_key = self.api_keys.values()
         self.messages = {}
         self.user_models = {}  # {channel: {user: model}}
+        self.tools_enabled = True
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.log = logging.getLogger(__name__).info
@@ -279,11 +283,14 @@ class InfiniGPT:
             "Authorization": f"Bearer {bearer}",
             "Content-Type": "application/json"
         }
+        
         data = {
             "model": model,
-            "messages": messages,
-            "tools": self.tools
+            "messages": messages
         }
+
+        if self.tools_enabled:
+            data['tools'] = self.tools
 
         if model not in self.models["google"]:
             data.update(self.options)
@@ -455,6 +462,18 @@ class InfiniGPT:
             f.close()
         await self.send_message(channel, help_menu)
 
+    async def toggle_tools(self, channel):
+        """
+        Toggle the availability of tools for the bot.
+
+        Args:
+            channel (str): Room ID.
+        """
+        self.tools_enabled = not self.tools_enabled
+        status = "enabled" if self.tools_enabled else "disabled"
+        self.log(f"Tools are now {status}")
+        await self.send_message(channel, f"Tools are now {status}")
+
     async def handle_message(self, message, sender, channel):
         """
         Handles messages sent in the channels.
@@ -478,7 +497,8 @@ class InfiniGPT:
             ".mymodel": lambda: self.set_user_model(channel, sender, message[1] if len(message) > 1 else None),
         }
         admin_commands = {
-            ".model": lambda: self.change_model(channel, model=message[1] if len(message) > 1 else None)
+            ".model": lambda: self.change_model(channel, model=message[1] if len(message) > 1 else None),
+            ".tools": lambda: self.toggle_tools(channel)
         }
 
         command = message[0]
