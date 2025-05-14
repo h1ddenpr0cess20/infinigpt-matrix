@@ -68,7 +68,7 @@ async def grok_image(prompt, model="grok-2-image-1212"):
         f.write(img.content)
     return filename
 
-async def gemini_image(prompt, model="gemini-2.0-flash-exp-image-generation"):
+async def gemini_image(prompt, model="gemini-2.0-flash-preview-image-generation"):
     with open("config.json", "r") as f:
         api_key = json.load(f)["llm"]["api_keys"]["google"]
 
@@ -81,14 +81,19 @@ async def gemini_image(prompt, model="gemini-2.0-flash-exp-image-generation"):
     with httpx.Client() as client:
         res = client.post(url, json=payload, timeout=120)
         res.raise_for_status()
-        data_b64 = (res.json()["candidates"][0]["content"]["parts"][0]["inlineData"]["data"])
-        img_bytes = base64.b64decode(data_b64)
+        response_json = res.json()
+        
+        parts = response_json["candidates"][0]["content"]["parts"]
+        for part in parts:
+            if "inlineData" in part and "data" in part["inlineData"]:
+                img_bytes = base64.b64decode(part["inlineData"]["data"])
+                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"./images/gemini_image_{timestamp}.png"
+                with open(filename, "wb") as f:
+                    f.write(img_bytes)
+                return filename
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"./images/gemini_image_{timestamp}.png"
-    with open(filename, "wb") as f:
-        f.write(img_bytes)
-    return filename
+
 
 async def openai_search(query: str):
     """
