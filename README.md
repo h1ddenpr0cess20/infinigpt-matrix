@@ -26,6 +26,8 @@ curl https://ollama.com/install.sh | sh
 
 
 Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.  Add those to the config.json file.
+On the first run the script will register a device and save the `device_id` back
+into `config.json` so subsequent launches reuse the same device.
 
 Add your own tools to the `tools.py` file and add the schema to the `schema.json` file.
 

@@ -65,6 +65,7 @@
             "#channel3:SERVER.TLD", 
             "!ExAmPleOfApRivAtErOoM:SERVER.TLD"
         ],
-        "admin": "@adminname:matrix.org"
+        "admin": "@adminname:matrix.org",
+        "device_id": ""
     }
 }
