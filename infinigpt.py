@@ -62,20 +62,15 @@ class InfiniGPT:
             config = json.load(f)
         with open("schema.json") as f:
             self.tools = json.load(f)
-        matrix_cfg = config['matrix']
-        self.server = matrix_cfg.get('server')
-        self.username = matrix_cfg.get('username')
-        self.password = matrix_cfg.get('password')
-        self.channels = matrix_cfg.get('channels')
-        self.admin = matrix_cfg.get('admin')
-        self.device_id = matrix_cfg.get('device_id')
+            
+        self.server, self.username, self.password, self.channels, self.admin, self.device_id = config["matrix"].values()
 
         self.client = AsyncClient(self.server, self.username, device_id=self.device_id)
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
         self.openai_key, self.xai_key, self.google_key, self.mistral_key, self.anthropic_key = self.api_keys.values()
         self.messages = {}
-        self.user_models = {}  # {channel: {user: model}}
+        self.user_models = {}
         self.tools_enabled = True
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -542,7 +537,7 @@ class InfiniGPT:
         Initialize the chatbot, log into Matrix, join rooms, and start syncing.
 
         """
-        login_resp = await self.client.login(self.password, device_id=self.device_id)
+        login_resp = await self.client.login(self.password, device_name=self.device_id)
         self.log(login_resp)
         if not self.device_id and hasattr(login_resp, 'device_id'):
             self.device_id = login_resp.device_id
