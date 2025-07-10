@@ -12,7 +12,7 @@ from nio import (
     RoomMessageText,
     KeyVerificationEvent,
 )
-from verification import VerificationMixin
+from verification import Verification
 import datetime
 import json
 import markdown
@@ -25,7 +25,7 @@ import os
 from tools import *
 
 
-class InfiniGPT(VerificationMixin):
+class InfiniGPT(Verification):
     """
     An AI chatbot for the Matrix chat protocol for use with the OpenAI API, supporting dynamic personalities, 
     custom prompts, model switching, and cross-user interactions.
@@ -70,14 +70,7 @@ class InfiniGPT(VerificationMixin):
         with open("schema.json") as f:
             self.tools = json.load(f)
 
-        matrix_cfg = config["matrix"]
-        self.server = matrix_cfg.get("server")
-        self.username = matrix_cfg.get("username")
-        self.password = matrix_cfg.get("password")
-        self.channels = matrix_cfg.get("channels", [])
-        self.admin = matrix_cfg.get("admin")
-        self.device_id = matrix_cfg.get("device_id", "")
-        self.store_path = matrix_cfg.get("store_path", "store")
+        self.server, self.username, self.password, self.channels, self.admin, self.device_id, self.store_path = config["matrix"].values()
 
         os.makedirs(self.store_path, exist_ok=True)
 

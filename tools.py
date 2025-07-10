@@ -5,6 +5,8 @@ import json
 import base64
 import datetime
 
+config_file = "config.json"
+
 async def crypto_prices(product_id):
     url = f"https://api.coinbase.com/api/v3/brokerage/market/products/{product_id}"
     response = httpx.get(url, headers={'Content-Type': 'application/json'})
@@ -13,7 +15,7 @@ async def crypto_prices(product_id):
 
 async def openai_image(prompt, quality="medium"):
     url = "https://api.openai.com/v1/images/generations"
-    with open("config.json", 'r') as f:
+    with open(config_file, 'r') as f:
         config = json.load(f)
     openai_key = config['llm']['api_keys']['openai']
     headers = {
@@ -48,7 +50,7 @@ async def openai_image(prompt, quality="medium"):
             return file_path
 
 async def grok_image(prompt, model="grok-2-image-1212"):
-    with open("config.json", "r") as f:
+    with open(config_file, "r") as f:
         api_key = json.load(f)["llm"]["api_keys"]["xai"]
 
     url = "https://api.x.ai/v1/images/generations"
@@ -69,7 +71,7 @@ async def grok_image(prompt, model="grok-2-image-1212"):
     return filename
 
 async def gemini_image(prompt, model="gemini-2.0-flash-preview-image-generation"):
-    with open("config.json", "r") as f:
+    with open(config_file, "r") as f:
         api_key = json.load(f)["llm"]["api_keys"]["google"]
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -93,14 +95,12 @@ async def gemini_image(prompt, model="gemini-2.0-flash-preview-image-generation"
                     f.write(img_bytes)
                 return filename
 
-
-
 async def openai_search(query: str):
     """
     Perform a web search using OpenAI's gpt-4o-mini-search-preview model and return structured search results.
     """
     url = "https://api.openai.com/v1/chat/completions"
-    with open("config.json", "r") as f:
+    with open(config_file, "r") as f:
         openai_key = json.load(f)["llm"]["api_keys"]["openai"]
     headers = {
         "Content-Type": "application/json",
