@@ -5,14 +5,7 @@ Author: Dustin Whyte
 """
 
 import asyncio
-from nio import (
-    AsyncClient,
-    AsyncClientConfig,
-    MatrixRoom,
-    RoomMessageText,
-    KeyVerificationEvent,
-)
-from verification import VerificationMixin
+from nio import AsyncClient, MatrixRoom, RoomMessageText
 import datetime
 import json
 import markdown
@@ -25,7 +18,7 @@ import os
 from tools import *
 
 
-class InfiniGPT(VerificationMixin):
+class InfiniGPT:
     """
     An AI chatbot for the Matrix chat protocol for use with the OpenAI API, supporting dynamic personalities, 
     custom prompts, model switching, and cross-user interactions.
@@ -69,23 +62,10 @@ class InfiniGPT(VerificationMixin):
             config = json.load(f)
         with open("schema.json") as f:
             self.tools = json.load(f)
+            
+        self.server, self.username, self.password, self.channels, self.admin, self.device_id = config["matrix"].values()
 
-        matrix_cfg = config["matrix"]
-        self.server = matrix_cfg.get("server")
-        self.username = matrix_cfg.get("username")
-        self.password = matrix_cfg.get("password")
-        self.channels = matrix_cfg.get("channels", [])
-        self.admin = matrix_cfg.get("admin")
-        self.device_id = matrix_cfg.get("device_id", "")
-        self.store_path = matrix_cfg.get("store_path", "store")
-
-        os.makedirs(self.store_path, exist_ok=True)
-
-        client_config = AsyncClientConfig(encryption_enabled=True, store_sync_tokens=True)
-        self.client = AsyncClient(self.server, self.username, device_id=self.device_id, store_path=self.store_path, config=client_config)
-        self.client.user_id = self.username
-        self.client.add_to_device_callback(self.emoji_verification_callback, (KeyVerificationEvent,))
-        self.client.add_to_device_callback(self.log_to_device_event, None)
+        self.client = AsyncClient(self.server, self.username, device_id=self.device_id)
 
         self.models, self.api_keys, self.default_model, self.default_personality, self.prompt, self.options, self.history_size, self.ollama_url = config["llm"].values()
         self.openai_key, self.xai_key, self.google_key, self.mistral_key, self.anthropic_key = self.api_keys.values()
@@ -557,16 +537,8 @@ class InfiniGPT(VerificationMixin):
         Initialize the chatbot, log into Matrix, join rooms, and start syncing.
 
         """
-        if self.device_id and hasattr(self.client, 'load_store') and callable(self.client.load_store):
-            result = self.client.load_store()
-            if asyncio.iscoroutine(result):
-                await result
-
         login_resp = await self.client.login(self.password, device_name=self.device_id)
         self.log(login_resp)
-        if hasattr(self.client, 'should_upload_keys') and self.client.should_upload_keys:
-            await self.client.keys_upload()
-        await self.client.sync(timeout=3000, full_state=True)
         if not self.device_id and hasattr(login_resp, 'device_id'):
             self.device_id = login_resp.device_id
             try:
@@ -587,11 +559,11 @@ class InfiniGPT(VerificationMixin):
             except:
                 self.log(f"Couldn't join {channel}")
 
-        self.join_time = datetime.datetime.now()
+        self.join_time = datetime.datetime.now()        
         await self.change_model(model=self.default_model)
 
         self.client.add_event_callback(self.message_callback, RoomMessageText)
-        await self.client.sync_forever(timeout=30000, full_state=True)
+        await self.client.sync_forever(timeout=30000, full_state=True) 
 
 if __name__ == "__main__":    
     infinigpt = InfiniGPT()

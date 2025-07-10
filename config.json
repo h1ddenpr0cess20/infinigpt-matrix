@@ -67,6 +67,7 @@
             "!ExAmPleOfApRivAtErOoM:SERVER.TLD"
         ],
         "admin": "@adminname:matrix.org",
-        "device_id": ""
+        "device_id": "",
+        "store_path": "store"
     }
 }
