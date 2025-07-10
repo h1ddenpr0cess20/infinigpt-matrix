@@ -144,10 +144,11 @@ class InfiniGPT(VerificationMixin):
             room_id=channel,
             message_type="m.room.message",
             content={
-                "msgtype": "m.text", 
+                "msgtype": "m.text",
                 "body": message,
                 "format": "org.matrix.custom.html",
                 "formatted_body": markdown.markdown(message, extensions=['extra', 'fenced_code', 'nl2br', 'sane_lists', 'tables', 'codehilite', 'wikilinks', 'footnotes'])},
+            ignore_unverified_devices=True,
         )
 
     async def send_image(self, channel, image_url=None, filename=None):
@@ -199,7 +200,8 @@ class InfiniGPT(VerificationMixin):
             await self.client.room_send(
                 room_id=channel,
                 message_type="m.room.message",
-                content=content
+                content=content,
+                ignore_unverified_devices=True
             )
             self.log(f"Sent image {filename} to {channel}")
 
@@ -548,8 +550,9 @@ class InfiniGPT(VerificationMixin):
 
             if message_time > self.join_time and sender != self.username:
                 try:
+                    await self.allow_devices(sender)
                     await self.handle_message(message, sender, channel)
-                except:
+                except Exception:
                     pass
                 
     async def main(self):
