@@ -22,6 +22,7 @@ from .handlers.cmd_mymodel import handle_mymodel
 from .security import Security
 from .fastmcp_client import FastMCPClient
 from .tools import execute_tool, load_schema
+from .utils import message_content_to_str
 
 
 class AppContext:
@@ -208,7 +209,12 @@ class AppContext:
                     tool_msg["tool_call_id"] = call["id"]
                 messages.append(tool_msg)
             try:
-                data = {"model": use_model, "messages": messages, "tools": self.tools_schema, "tool_choice": tool_choice}
+                data = {
+                    "model": use_model,
+                    "messages": messages,
+                    "tools": self.tools_schema,
+                    "tool_choice": tool_choice,
+                }
                 if (
                     use_model not in self.cfg.llm.models.get("google", [])
                     and use_model != "grok-4"
@@ -221,7 +227,7 @@ class AppContext:
                 return ""
             iterations += 1
         final_msg = (result.get("choices", [{}])[0].get("message") or {})
-        content = (final_msg.get("content") or "").strip()
+        content = message_content_to_str(final_msg).strip()
         messages.append({"role": "assistant", "content": content})
         messages[:] = [m for m in messages if not (m.get("role") == "tool" or (isinstance(m, dict) and m.get("tool_calls")))]
         if len(messages) > self.cfg.llm.history_size:

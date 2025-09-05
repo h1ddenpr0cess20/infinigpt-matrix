@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..utils import message_content_to_str
+
 
 async def handle_x(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
     parts = (args or "").split()
@@ -33,7 +35,7 @@ async def handle_x(ctx: Any, room_id: str, sender_id: str, sender_display: str, 
             if model not in ctx.cfg.llm.models.get("google", []):
                 data.update(ctx.options)
             result = await ctx.llm.chat(data)
-            response_text = (result.get("choices", [{}])[0].get("message") or {}).get("content", "")
+            response_text = message_content_to_str((result.get("choices", [{}])[0].get("message") or {}))
     except Exception as e:
         try:
             await ctx.matrix.send_text(room_id, "Something went wrong", html=ctx.render("Something went wrong"))

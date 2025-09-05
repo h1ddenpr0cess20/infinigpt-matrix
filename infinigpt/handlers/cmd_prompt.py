@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..utils import message_content_to_str
+
 
 async def handle_persona(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
     persona = args.strip()
@@ -45,7 +47,7 @@ async def _respond(ctx: Any, room_id: str, user_id: str, header_display: str) ->
         except Exception:
             pass
         return
-    response_text = (result.get("choices", [{}])[0].get("message") or {}).get("content", "")
+    response_text = message_content_to_str((result.get("choices", [{}])[0].get("message") or {}))
     # Think markers
     if "</think>" in response_text and "<think>" in response_text:
         try:

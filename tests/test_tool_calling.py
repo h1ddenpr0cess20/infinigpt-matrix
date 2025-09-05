@@ -33,6 +33,16 @@ class FakeLLM:
         return {"choices": [{"message": {"content": "Result is 4"}}]}
 
 
+class CaptureLLM:
+    def __init__(self, response):
+        self.response = response
+        self.payloads = []
+
+    async def chat(self, payload):
+        self.payloads.append(payload)
+        return self.response
+
+
 @pytest.mark.asyncio
 async def test_tool_loop_executes_and_completes(monkeypatch):
     cfg = AppConfig(
@@ -45,4 +55,24 @@ async def test_tool_loop_executes_and_completes(monkeypatch):
     messages = [{"role": "system", "content": "you are p."}]
     out = await ctx.respond_with_tools(messages, room_id="!r")
     assert "Result is 4" in out
+
+
+@pytest.mark.asyncio
+async def test_google_list_content(monkeypatch):
+    cfg = AppConfig(
+        llm=LLMConfig(
+            models={"google": ["gemini-2.0-flash"]},
+            api_keys={},
+            default_model="gemini-2.0-flash",
+            personality="p",
+            prompt=["you are ", "."],
+        ),
+        matrix=MatrixConfig(server="s", username="u", password="p", channels=["!r"], admins=[]),
+    )
+    ctx = AppContext(cfg)
+    fake_llm = CaptureLLM({"choices": [{"message": {"content": [{"type": "text", "text": "ok"}]}}]})
+    ctx.llm = fake_llm
+    messages = [{"role": "system", "content": "you are p."}]
+    out = await ctx.respond_with_tools(messages, room_id="!r")
+    assert out == "ok"
 
