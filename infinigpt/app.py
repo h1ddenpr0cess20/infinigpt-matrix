@@ -122,6 +122,11 @@ class AppContext:
                 len(self.tools_schema) - len(mcp_schema),
             )
 
+    def _should_apply_options(self, model: str) -> bool:
+        """Determine if additional LLM options should be applied to the given model."""
+        google_models = self.cfg.llm.models.get("google", [])
+        return model not in google_models and model != "grok-4" and not (isinstance(model, str) and model.startswith("gpt-5-"))
+
     async def to_thread(self, fn, *args, **kwargs) -> Any:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(self.executor, lambda: fn(*args, **kwargs))
@@ -156,12 +161,8 @@ class AppContext:
             "tools": self.tools_schema,
             "tool_choice": tool_choice,
         }
-        if (
-                    use_model not in self.cfg.llm.models.get("google", [])
-                    and use_model != "grok-4"
-                    and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
-                ):
-                    data.update(self.options)
+        if self._should_apply_options(use_model):
+            data.update(self.options)
         try:
             result = await self.llm.chat(data)
         except Exception:
@@ -203,18 +204,13 @@ class AppContext:
                                 pass
                 except Exception:
                     pass
-                tool_msg: Dict[str, Any] = {"role": "tool", "content": str(tool_result)}
-                if call.get("id"):
-                    tool_msg["tool_call_id"] = call["id"]
+                tool_msg: Dict[str, Any] = {"role": "tool", "content": str(tool_result), "tool_call_id": call["id"]}
                 messages.append(tool_msg)
             try:
                 data = {"model": use_model, "messages": messages, "tools": self.tools_schema, "tool_choice": tool_choice}
-                if (
-                    use_model not in self.cfg.llm.models.get("google", [])
-                    and use_model != "grok-4"
-                    and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
-                ):
+                if self._should_apply_options(use_model):
                     data.update(self.options)
+                
                 result = await self.llm.chat(data)
             except Exception:
                 self.logger.exception("Follow-up chat with tools failed")
