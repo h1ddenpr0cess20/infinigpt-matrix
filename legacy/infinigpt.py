@@ -12,7 +12,7 @@ from nio import (
     RoomMessageText,
     KeyVerificationEvent,
 )
-from verification import Verification
+from legacy.verification import Verification
 import datetime
 import json
 import markdown

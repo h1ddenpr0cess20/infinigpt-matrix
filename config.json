@@ -6,14 +6,20 @@
                 "gpt-4o-mini",
                 "gpt-4.1",
                 "gpt-4.1-mini",
-                "gpt-4.1-nano"
+                "gpt-4.1-nano",
+                "gpt-5",
+                "gpt-5-mini",
+                "gpt-5-nano"
+            ],
+            "lmstudio": [
+                "openai/gpt-oss-20b",
+                "qwen/qwen3-8b"
             ],
             "xai": [
                 "grok-3-mini",
-                "grok-3-mini-fast",
-                "grok-3-fast",
                 "grok-3",
-                "grok-4"
+                "grok-4",
+                "grok-code-fast-1"
             ],
             "google": [
                 "gemini-2.0-flash", 
@@ -34,8 +40,7 @@
                 "claude-opus-4-0"
             ],
             "ollama": [
-                "llama3.2",
-                "qwen3:14b",
+                "gpt-oss:20b",
                 "qwen3"
             ]
         },
@@ -55,7 +60,9 @@
             "frequency_penalty": 0.5
         },
         "history_size": 24,
-        "ollama_url": "localhost:11434"
+        "ollama_url": "localhost:11434",
+        "lmstudio_url": "localhost:1234",
+        "mcp_servers": {}
     },
     "matrix": {
         "server": "https://matrix.org",
@@ -67,7 +74,7 @@
             "#channel3:SERVER.TLD", 
             "!ExAmPleOfApRivAtErOoM:SERVER.TLD"
         ],
-        "admin": "@adminname:matrix.org",
+        "admins": ["@adminname:matrix.org"],
         "device_id": "",
         "store_path": "store"
     }

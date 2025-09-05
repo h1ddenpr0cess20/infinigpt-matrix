@@ -1,0 +1,12 @@
+services:
+  infinigpt:
+    build: .
+    environment:
+      - OPENAI_API_KEY
+      - XAI_API_KEY
+      - GOOGLE_API_KEY
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./store:/app/store
+    command: ["infinigpt-matrix", "--config", "config.json", "--log-level", "INFO"]
+
