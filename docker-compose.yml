@@ -5,8 +5,10 @@ services:
       - OPENAI_API_KEY
       - XAI_API_KEY
       - GOOGLE_API_KEY
+      - MISTRAL_API_KEY
+      - ANTHROPIC_API_KEY
     volumes:
-      - ./config.json:/app/config.json:ro
-      - ./store:/app/store
-    command: ["infinigpt-matrix", "--config", "config.json", "--log-level", "INFO"]
-
+      - ./config.json:/data/config.json:ro
+      - ./store:/data/store
+      - ./images:/data/images
+    command: ["infinigpt-matrix", "--config", "/data/config.json", "--store-path", "/data/store", "--log-level", "INFO"]

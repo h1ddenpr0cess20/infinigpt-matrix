@@ -15,7 +15,6 @@ Use these commands in any room the bot has joined. You can address the bot with 
 | `.stock` | Clear your history and run without a system prompt. | `.stock` |
 | `.help` | Show this help message. | `.help` |
 
-
 ~~~
 
 ## Admin Commands

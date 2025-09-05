@@ -29,13 +29,15 @@ Notes:
 
 To persist images outside the container, mount the directory.
 
+- In the official image, `/app/images` is a symlink to `/data/images`. Mount `/data/images` to persist files.
+
 - Example (docker compose service snippet):
 
 ```yaml
 services:
   infinigpt:
     volumes:
-      - ./images:/app/images
+      - ./images:/data/images
 ```
 
 - Example (docker run):
@@ -43,7 +45,7 @@ services:
 ```bash
 mkdir -p images
 docker run --rm -it \
-  -v "$(pwd)/images":/app/images \
+  -v "$(pwd)/images":/data/images \
   infinigpt-matrix:latest
 ```
 

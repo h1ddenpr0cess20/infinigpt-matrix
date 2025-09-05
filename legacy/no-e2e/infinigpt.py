@@ -15,7 +15,7 @@ import logging.config
 import mimetypes
 import os
 
-from tools import *
+from legacy.tools import *
 
 
 class InfiniGPT:
