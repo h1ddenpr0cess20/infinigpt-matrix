@@ -154,8 +154,9 @@ class AppContext:
             "model": use_model,
             "messages": messages,
             "tools": self.tools_schema,
-            "tool_choice": tool_choice,
         }
+        if use_model not in self.cfg.llm.models.get("google", []) and tool_choice != "auto":
+            data["tool_choice"] = tool_choice
         if (
                     use_model not in self.cfg.llm.models.get("google", [])
                     and use_model != "grok-4"
@@ -208,7 +209,9 @@ class AppContext:
                     tool_msg["tool_call_id"] = call["id"]
                 messages.append(tool_msg)
             try:
-                data = {"model": use_model, "messages": messages, "tools": self.tools_schema, "tool_choice": tool_choice}
+                data = {"model": use_model, "messages": messages, "tools": self.tools_schema}
+                if use_model not in self.cfg.llm.models.get("google", []) and tool_choice != "auto":
+                    data["tool_choice"] = tool_choice
                 if (
                     use_model not in self.cfg.llm.models.get("google", [])
                     and use_model != "grok-4"
