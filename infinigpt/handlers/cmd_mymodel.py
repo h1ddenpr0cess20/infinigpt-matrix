@@ -18,6 +18,12 @@ async def handle_mymodel(ctx: Any, room_id: str, sender_id: str, sender_display:
         body = "You cannot set an Ollama model unless it matches the current global model. Please ask an admin to change the global model first."
         await ctx.matrix.send_text(room_id, body, html=ctx.render(body))
         return
+    # Restrict LM Studio per-user (same rule as Ollama)
+    lmstudio_models = ctx.models.get("lmstudio", [])
+    if model in lmstudio_models and not (ctx.model in lmstudio_models and model == ctx.model):
+        body = "You cannot set an LM Studio model unless it matches the current global model. Please ask an admin to change the global model first."
+        await ctx.matrix.send_text(room_id, body, html=ctx.render(body))
+        return
     for models in ctx.models.values():
         if model in models:
             if room_id not in ctx.user_models:
@@ -30,4 +36,3 @@ async def handle_mymodel(ctx: Any, room_id: str, sender_id: str, sender_display:
     models = ", ".join([m for v in ctx.models.values() for m in v])
     body = f"Model '{model}' not found. Available: {models}"
     await ctx.matrix.send_text(room_id, body, html=ctx.render(body))
-
