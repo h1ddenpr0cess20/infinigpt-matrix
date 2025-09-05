@@ -150,19 +150,28 @@ class AppContext:
 
     async def respond_with_tools(self, messages: List[Dict[str, Any]], *, model: Optional[str] = None, room_id: Optional[str] = None, tool_choice: str = "auto") -> str:
         use_model = model or self.model
+        tools = self.tools_schema
+        if use_model in self.cfg.llm.models.get("google", []):
+            tools = []
+            for t in self.tools_schema:
+                t_copy = json.loads(json.dumps(t))
+                func = t_copy.get("function", {})
+                func.setdefault("strict", False)
+                t_copy["function"] = func
+                tools.append(t_copy)
         data: Dict[str, Any] = {
             "model": use_model,
             "messages": messages,
-            "tools": self.tools_schema,
+            "tools": tools,
         }
         if use_model not in self.cfg.llm.models.get("google", []) and tool_choice != "auto":
             data["tool_choice"] = tool_choice
         if (
-                    use_model not in self.cfg.llm.models.get("google", [])
-                    and use_model != "grok-4"
-                    and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
-                ):
-                    data.update(self.options)
+            use_model not in self.cfg.llm.models.get("google", [])
+            and use_model != "grok-4"
+            and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
+        ):
+            data.update(self.options)
         try:
             result = await self.llm.chat(data)
         except Exception:
@@ -209,7 +218,7 @@ class AppContext:
                     tool_msg["tool_call_id"] = call["id"]
                 messages.append(tool_msg)
             try:
-                data = {"model": use_model, "messages": messages, "tools": self.tools_schema}
+                data = {"model": use_model, "messages": messages, "tools": tools}
                 if use_model not in self.cfg.llm.models.get("google", []) and tool_choice != "auto":
                     data["tool_choice"] = tool_choice
                 if (
