@@ -20,11 +20,27 @@ except Exception:  # pragma: no cover
 
 
 class Security:
+    """Helpers for Matrix device verification and trust management."""
+
     def __init__(self, matrix_client, logger: Optional[logging.Logger] = None) -> None:
+        """Create a new Security helper.
+
+        Args:
+            matrix_client: An object exposing a subset of nio's client methods.
+            logger: Optional logger; defaults to module logger.
+        """
         self.matrix = matrix_client
         self.logger = logger or logging.getLogger(__name__)
 
     async def log_to_device_event(self, event: Any) -> None:
+        """Log to-device events and auto-respond to verification requests.
+
+        Sends a "verification ready" to-device reply for
+        ``m.key.verification.request`` events when possible.
+
+        Args:
+            event: The to-device event object.
+        """
         try:
             etype = type(event).__name__
         except Exception:
@@ -49,6 +65,11 @@ class Security:
                 self.logger.info("Failed to send verification ready message.")
 
     async def emoji_verification_callback(self, event: Any) -> None:  # KeyVerificationEvent
+        """Drive SAS emoji verification handshake for E2EE devices.
+
+        Args:
+            event: A key verification event from nio.
+        """
         client = getattr(self.matrix, "client", None)
         if client is None:
             return
@@ -87,6 +108,11 @@ class Security:
             self.logger.info("Exception during emoji verification.")
 
     async def allow_devices(self, user_id: str) -> None:
+        """Mark and verify devices for a given user when possible.
+
+        Args:
+            user_id: Matrix user ID whose devices should be trusted.
+        """
         c = getattr(self.matrix, "client", None)
         if c is None:
             return

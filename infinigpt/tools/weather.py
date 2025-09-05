@@ -5,6 +5,14 @@ import httpx
 
 
 def _units_map(units: str) -> Dict[str, str]:
+    """Map a unit preference to Open-Meteo parameter names.
+
+    Args:
+        units: Unit preference ("metric"/"imperial"/"us").
+
+    Returns:
+        Mapping of API parameter names to unit strings.
+    """
     u = (units or "metric").lower()
     if u in ("imperial", "us"):
         return {"temperature_unit": "fahrenheit", "windspeed_unit": "mph"}
@@ -12,6 +20,7 @@ def _units_map(units: str) -> Dict[str, str]:
 
 
 def _code_desc(code: int) -> str:
+    """Return a short human-friendly description for a weather code."""
     mapping = {
         0: "clear sky",
         1: "mainly clear",
@@ -38,7 +47,17 @@ def _code_desc(code: int) -> str:
     return mapping.get(code, f"code {code}")
 
 
-def get_weather(city: str, units: str = "metric") -> Dict[str, Any]:
+def get_weather(city: str, units: str = "imperial") -> Dict[str, Any]:
+    """Lookup current weather for a city using Open-Meteo.
+
+    Args:
+        city: City name to geocode and fetch current conditions for.
+        units: Unit preference ("imperial" or "metric").
+
+    Returns:
+        Dict containing location, temperature, windspeed, and description, or
+        an ``{"error": ...}`` on failure.
+    """
     if not city or not isinstance(city, str):
         return {"error": "Invalid 'city' argument; expected a non-empty string."}
 

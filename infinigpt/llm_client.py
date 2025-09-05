@@ -9,7 +9,15 @@ from .config import AppConfig
 
 
 def resolve_provider(model: str, cfg: AppConfig) -> Tuple[str, str]:
-    """Return (base_url, bearer) for the selected model based on provider lists."""
+    """Resolve provider base URL and bearer token for a model.
+
+    Args:
+        model: Model identifier.
+        cfg: Application configuration.
+
+    Returns:
+        Tuple of (base_url, bearer_token).
+    """
     llm = cfg.llm
     if model in llm.models.get("openai", []):
         return ("https://api.openai.com/v1", llm.api_keys.get("openai", ""))
@@ -31,13 +39,27 @@ def resolve_provider(model: str, cfg: AppConfig) -> Tuple[str, str]:
 
 
 class LLMClient:
+    """HTTP client for provider-agnostic chat API calls."""
+
     def __init__(self, cfg: AppConfig) -> None:
+        """Initialize the client with configuration.
+
+        Args:
+            cfg: Application configuration instance.
+        """
         self.cfg = cfg
 
     async def chat(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Make a chat.completions call with standardized provider routing.
 
-        Expects keys: model, messages, tools (optional), options (already merged for non-Google).
+        Expects keys: ``model``, ``messages``, optional ``tools`` and
+        provider-agnostic options already merged for non-Google models.
+
+        Args:
+            payload: OpenAI-compatible request payload.
+
+        Returns:
+            Parsed JSON response as a dictionary.
         """
         model = payload["model"]
         base_url, bearer = resolve_provider(model, self.cfg)

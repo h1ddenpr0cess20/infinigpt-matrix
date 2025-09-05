@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_x(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Speak as the target user by addressing them explicitly.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: "<display|@user:server> <message>".
+    """
     parts = (args or "").split()
     if len(parts) < 2:
         return

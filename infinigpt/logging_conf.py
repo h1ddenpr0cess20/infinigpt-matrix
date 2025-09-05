@@ -4,6 +4,11 @@ import re
 
 
 class MatrixHighlighter:
+    """Rich highlighter for Matrix-specific patterns in log lines.
+
+    Highlights user IDs, room IDs, model names, tool calls, and common
+    bot log phrases to make logs easier to scan in the terminal.
+    """
     _user_re = re.compile(r"@[A-Za-z0-9_.\-:]+\b")
     _room_re = re.compile(r"[#!][^\s:]+:[A-Za-z0-9_.\-]+")
     _model_re = re.compile(r"\bModel set to\s+(?P<model>\S+)")
@@ -18,6 +23,15 @@ class MatrixHighlighter:
     _tool_call_re = re.compile(r"(?P<tool>Tool)\s+\((?P<origin>MCP|builtin)\):\s+(?P<name>\S+)\s+args=(?P<args>.*)")
 
     def __call__(self, value):
+        """Return a Rich Text instance with highlights applied.
+
+        Args:
+            value: The original log record message (str or Text-like).
+
+        Returns:
+            A Rich ``Text`` instance with style spans applied when Rich is
+            available; otherwise returns the original value.
+        """
         try:
             from rich.text import Text
         except Exception:
@@ -27,6 +41,11 @@ class MatrixHighlighter:
         return text
 
     def highlight(self, text) -> None:
+        """Apply in-place style spans to a Rich ``Text`` instance.
+
+        Args:
+            text: A Rich ``Text`` instance to stylize.
+        """
         s = text.plain
         for m in self._user_re.finditer(s):
             text.stylize("bold cyan", m.start(), m.end())
@@ -84,6 +103,13 @@ class MatrixHighlighter:
 
 
 def setup_logging(level: str = "INFO", json: bool = False) -> None:
+    """Configure package logging with Rich fallback.
+
+    Args:
+        level: Logging level name (e.g., "DEBUG", "INFO").
+        json: When True, use a simpler formatter suitable for JSON-like
+            ingestion; otherwise use a human-friendly rich console.
+    """
     lvl = getattr(logging, level.upper(), logging.INFO)
     logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})
     try:
@@ -110,4 +136,9 @@ def setup_logging(level: str = "INFO", json: bool = False) -> None:
 
 
 def configure_logging(level: int = logging.INFO) -> None:
+    """Helper to configure logging from a numeric level.
+
+    Args:
+        level: Numeric logging level from the ``logging`` module.
+    """
     setup_logging(logging.getLevelName(level))

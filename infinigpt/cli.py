@@ -14,6 +14,11 @@ from .app import run as run_app
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Create the command-line argument parser for the bot.
+
+    Returns:
+        Configured ``argparse.ArgumentParser`` instance.
+    """
     parser = argparse.ArgumentParser(prog="infinigpt-matrix", description="InfiniGPT Matrix bot (modular)", add_help=True)
     parser.add_argument("-L", "--log-level", default=os.getenv("INFINIGPT_LOG_LEVEL", "INFO"), choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], help="Logging level")
     parser.add_argument("-c", "--config", help="Path to config.json (default: ./config.json)")
@@ -29,6 +34,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    """CLI entrypoint for running the Matrix bot.
+
+    Args:
+        argv: Optional argument list (defaults to ``sys.argv[1:]``).
+
+    Returns:
+        Process exit code (0 for success).
+    """
     argv = sys.argv[1:] if argv is None else argv
     parser = build_parser()
     args = parser.parse_args(argv)

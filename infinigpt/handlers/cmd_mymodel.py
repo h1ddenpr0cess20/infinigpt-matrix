@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_mymodel(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Show or set a per-user model for the current room.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Argument string; if present, desired model name.
+    """
     model = (args or "").strip()
     if not model:
         # Show current and available

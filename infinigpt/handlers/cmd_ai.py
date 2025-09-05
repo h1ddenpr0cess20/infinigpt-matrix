@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_ai(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Primary chat command: add user text and reply with model output.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Optional text to add before generating a reply.
+    """
     history = ctx.history
     matrix = ctx.matrix
     if args:

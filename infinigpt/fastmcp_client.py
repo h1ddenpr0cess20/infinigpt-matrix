@@ -11,7 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 class FastMCPClient:
+    """Fast, lightweight client for MCP servers via fastmcp library.
+
+    Resolves server specs from strings, dicts, or env indirections, and
+    exposes blocking list/call methods that internally manage event loops.
+    """
+
     def __init__(self, servers: Dict[str, Any]) -> None:
+        """Create a client configured with one or more MCP servers.
+
+        Args:
+            servers: Mapping of server name to spec; values may be a URL,
+                a dict spec, or an env var name containing JSON or URL.
+        """
         try:
             from fastmcp import Client  # type: ignore
             import mcp.types  # type: ignore
@@ -45,6 +57,7 @@ class FastMCPClient:
                     self._servers[name] = wrapped
 
     async def _list_tools_async(self) -> List[Dict[str, Any]]:
+        """Asynchronously fetch tool schemas from all configured servers."""
         schema: List[Dict[str, Any]] = []
         Client = self._Client
         for name, cfg in self._servers.items():
@@ -62,6 +75,7 @@ class FastMCPClient:
         return schema
 
     def _run(self, coro):
+        """Run an async coroutine from sync code, safely handling loops."""
         try:
             asyncio.get_running_loop()
         except RuntimeError:
@@ -88,9 +102,11 @@ class FastMCPClient:
         return result.get("value")
 
     def list_tools(self) -> List[Dict[str, Any]]:
+        """List tools from all servers, returning OpenAI-style JSON schema."""
         return self._run(self._list_tools_async())
 
     async def _call_tool_async(self, server_name: str, spec: Any, name: str, arguments: Dict[str, Any]) -> Any:
+        """Asynchronously call a tool on a specific server and unwrap data."""
         Client = self._Client
         client = Client({server_name: spec})
         async with client:
@@ -107,6 +123,15 @@ class FastMCPClient:
         return {"result": "\n".join(texts)}
 
     def call_tool(self, name: str, arguments: Dict[str, Any]) -> str:
+        """Call a tool by name and return a JSON string result.
+
+        Args:
+            name: Tool name to invoke.
+            arguments: Input mapping for the tool.
+
+        Returns:
+            JSON string encoding of the result or error.
+        """
         server_name = self._tool_servers.get(name)
         if server_name is None:
             return json.dumps({"error": f"Unknown tool: {name}"}, ensure_ascii=False)

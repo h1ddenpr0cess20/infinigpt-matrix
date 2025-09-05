@@ -14,10 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 def _schema_path() -> Path:
+    """Return the filesystem path to the builtin tools schema file."""
     return Path(__file__).resolve().parent / "schema.json"
 
 
 def load_schema(path: str | None = None) -> List[Dict[str, Any]]:
+    """Load the tools JSON schema definitions.
+
+    Args:
+        path: Optional path to a schema JSON file. Defaults to the packaged
+            ``schema.json``.
+
+    Returns:
+        A list of tool definition dictionaries.
+
+    Raises:
+        ValueError: If the top-level JSON value is not a list.
+    """
     p = Path(path) if path else _schema_path()
     logger.debug("Loading tools schema from %s", p)
     with p.open("r", encoding="utf-8") as f:
@@ -29,6 +42,14 @@ def load_schema(path: str | None = None) -> List[Dict[str, Any]]:
 
 
 def _discover_functions(names: Iterable[str]) -> Dict[str, Callable[..., str]]:
+    """Locate tool functions by name across modules in this package.
+
+    Args:
+        names: Iterable of function names to look up.
+
+    Returns:
+        Mapping of function name to callable.
+    """
     names = list(dict.fromkeys(names))
     remaining = set(names)
     found: Dict[str, Callable[..., str]] = {}
@@ -53,6 +74,7 @@ def _discover_functions(names: Iterable[str]) -> Dict[str, Callable[..., str]]:
 
 
 def _build_registry_from_schema(schema: List[Dict[str, Any]]) -> Dict[str, Callable[..., str]]:
+    """Construct a function registry from tool schema definitions."""
     names: List[str] = []
     for tool in schema:
         fn = (tool.get("function") or {}).get("name")
@@ -62,6 +84,7 @@ def _build_registry_from_schema(schema: List[Dict[str, Any]]) -> Dict[str, Calla
 
 
 def _get_registry() -> Dict[str, Callable[..., str]]:
+    """Return the global tool registry, building it on first use."""
     global _TOOL_REGISTRY
     if _TOOL_REGISTRY is None:
         try:
@@ -74,6 +97,15 @@ def _get_registry() -> Dict[str, Callable[..., str]]:
 
 
 def execute_tool(name: str, arguments: Dict[str, Any]) -> str:
+    """Execute a builtin tool and normalize its return value to JSON.
+
+    Args:
+        name: Tool function name.
+        arguments: Keyword arguments to call the tool with.
+
+    Returns:
+        JSON string encoding of the tool result or error.
+    """
     registry = _get_registry()
     func = registry.get(name)
     if func is None:

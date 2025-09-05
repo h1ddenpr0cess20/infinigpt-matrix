@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_help(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Send help text, with optional admin-only section after delimiter.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Unused.
+    """
     help_menu = ""
     for path in ("help.md", "help.txt"):
         try:

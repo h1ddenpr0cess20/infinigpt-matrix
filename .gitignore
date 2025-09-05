@@ -2,3 +2,4 @@
 __pycache__
 config_test.json
 /store
+.vscode/launch.json

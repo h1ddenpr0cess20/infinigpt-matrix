@@ -6,10 +6,20 @@ import os
 
 
 def _config_path() -> str:
+    """Return path to config JSON used for API key lookup."""
     return os.environ.get("INFINIGPT_CONFIG") or os.environ.get("INFINIGPT_CONFIG_PATH") or "config.json"
 
 
 def _get_api_key(provider: str, env_name: str) -> str:
+    """Get an API key from environment or config file.
+
+    Args:
+        provider: Provider key in config JSON.
+        env_name: Environment variable name to prefer.
+
+    Returns:
+        API key string or empty string if unavailable.
+    """
     # Prefer environment variables for secrets
     env = os.environ.get(env_name)
     if env:
@@ -24,6 +34,15 @@ def _get_api_key(provider: str, env_name: str) -> str:
 
 
 def openai_image(prompt: str, quality: str = "medium") -> str:
+    """Generate an image with OpenAI and save it locally.
+
+    Args:
+        prompt: Text prompt for image generation.
+        quality: OpenAI quality setting (e.g., "medium").
+
+    Returns:
+        File path to the saved PNG, or JSON error string.
+    """
     url = "https://api.openai.com/v1/images/generations"
     openai_key = _get_api_key("openai", "OPENAI_API_KEY")
     if not openai_key:
@@ -50,6 +69,15 @@ def openai_image(prompt: str, quality: str = "medium") -> str:
 
 
 def grok_image(prompt: str, model: str = "grok-2-image-1212") -> str:
+    """Generate an image with xAI Grok and save it locally.
+
+    Args:
+        prompt: Text prompt for image generation.
+        model: Grok image model identifier.
+
+    Returns:
+        File path to the saved PNG, or JSON error string.
+    """
     api_key = _get_api_key("xai", "XAI_API_KEY")
     if not api_key:
         return json.dumps({"error": "Missing xAI API key (XAI_API_KEY or llm.api_keys.xai)"})
@@ -79,6 +107,15 @@ def grok_image(prompt: str, model: str = "grok-2-image-1212") -> str:
 
 
 def gemini_image(prompt: str, model: str = "gemini-2.5-flash-image-preview") -> str:
+    """Generate an image with Google Gemini and save it locally.
+
+    Args:
+        prompt: Text prompt for image generation.
+        model: Gemini model identifier.
+
+    Returns:
+        File path to the saved PNG, or JSON error string.
+    """
     api_key = _get_api_key("google", "GOOGLE_API_KEY")
     if not api_key:
         return json.dumps({"error": "Missing Google API key (GOOGLE_API_KEY or llm.api_keys.google)"})

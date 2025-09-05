@@ -18,6 +18,7 @@ _ALLOWED_OPERATORS = {
 
 
 def _eval(node: ast.AST) -> float:
+    """Safely evaluate a parsed arithmetic AST expression."""
     if isinstance(node, ast.Expression):
         return _eval(node.body)
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
@@ -33,6 +34,17 @@ def _eval(node: ast.AST) -> float:
 
 
 def calculate_expression(expression: str) -> Dict[str, Any]:
+    """Compute the numeric result of a math expression.
+
+    Supports +, -, *, /, **, %, // and unary +/- operators. Rejects any
+    unsupported nodes for safety.
+
+    Args:
+        expression: Arithmetic expression string.
+
+    Returns:
+        Dict with ``{"result": float}`` or an error message.
+    """
     try:
         parsed = ast.parse(expression, mode="eval")
         result = _eval(parsed)

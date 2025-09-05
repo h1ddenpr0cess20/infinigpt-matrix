@@ -25,7 +25,20 @@ from .tools import execute_tool, load_schema
 
 
 class AppContext:
+    """Application runtime context and service container.
+
+    Bundles configuration, the Matrix client, history store, LLM client,
+    tool registries (builtin and MCP), and common helpers used across
+    handlers and runtime.
+    """
     def __init__(self, cfg: AppConfig, executor: Optional[ThreadPoolExecutor] = None) -> None:
+        """Initialize the application context.
+
+        Args:
+            cfg: Validated application configuration.
+            executor: Optional thread pool to use for blocking calls. If not
+                provided, a bounded executor is created.
+        """
         self.cfg = cfg
         self.executor = executor or ThreadPoolExecutor(max_workers=4, thread_name_prefix="infinigpt")
         self.logger = logging.getLogger(__name__)
@@ -92,9 +105,9 @@ class AppContext:
                     successful[name] = spec
                     mcp_schema.extend(tools)
                     for tool in tools:
-                        fn = (tool.get("function") or {}).get("name")
-                        if isinstance(fn, str):
-                            self._mcp_tool_names.add(fn)
+                        name_str = f"{(tool.get('function') or {}).get('name') or ''}".strip()
+                        if name_str:
+                            self._mcp_tool_names.add(name_str)
                 except Exception:
                     self.logger.exception("Failed to list tools from MCP server '%s'", name)
                     continue
@@ -107,8 +120,8 @@ class AppContext:
                     self.mcp_client = None
         combined: List[Dict[str, Any]] = list(mcp_schema)
         for tool in builtin_schema:
-            fn = (tool.get("function") or {}).get("name")
-            if isinstance(fn, str) and fn not in self._mcp_tool_names:
+            name_str = f"{(tool.get('function') or {}).get('name') or ''}".strip()
+            if name_str and name_str not in self._mcp_tool_names:
                 combined.append(tool)
         self.tools_schema = combined
         if not self.tools_schema:
@@ -123,15 +136,44 @@ class AppContext:
             )
 
     def _should_apply_options(self, model: str) -> bool:
-        """Determine if additional LLM options should be applied to the given model."""
+        """Decide whether to apply generic LLM options to a model.
+
+        Some providers (e.g., Google/Gemini) and certain models expect their
+        own option sets; for these, the generic options are skipped.
+
+        Args:
+            model: The model name being used for a chat request.
+
+        Returns:
+            True if generic options should be applied, False otherwise.
+        """
         google_models = self.cfg.llm.models.get("google", [])
-        return model not in google_models and model != "grok-4" and not (isinstance(model, str) and model.startswith("gpt-5-"))
+        return model not in google_models and model != "grok-4" and not model.startswith("gpt-5-")
 
     async def to_thread(self, fn, *args, **kwargs) -> Any:
+        """Run a callable on the thread pool executor.
+
+        Args:
+            fn: The callable to execute.
+            *args: Positional arguments for the callable.
+            **kwargs: Keyword arguments for the callable.
+
+        Returns:
+            The return value from the callable.
+        """
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(self.executor, lambda: fn(*args, **kwargs))
 
     def render(self, body: str) -> Optional[str]:
+        """Render text to HTML if markdown rendering is enabled.
+
+        Args:
+            body: The input text to render.
+
+        Returns:
+            The rendered HTML string when markdown is enabled and rendering
+            succeeds; otherwise None.
+        """
         if not self.cfg.markdown:
             return None
         try:
@@ -141,6 +183,15 @@ class AppContext:
             return None
 
     def _execute_tool(self, name: str, arguments: Dict[str, Any]) -> str:
+        """Execute a tool by name using either MCP or builtin registry.
+
+        Args:
+            name: Tool function name.
+            arguments: JSON-serializable argument mapping.
+
+        Returns:
+            The tool's stringified result payload.
+        """
         try:
             _args_str = json.dumps(arguments or {}, ensure_ascii=False, default=str)
         except Exception:
@@ -154,6 +205,24 @@ class AppContext:
         return execute_tool(name, arguments)
 
     async def respond_with_tools(self, messages: List[Dict[str, Any]], *, model: Optional[str] = None, room_id: Optional[str] = None, tool_choice: str = "auto") -> str:
+        """Run a tool-enabled chat loop and return the assistant reply.
+
+        Iteratively allows the model to request tool calls, executes them, and
+        feeds results back until the model responds without tool calls or a
+        maximum iteration count is reached.
+
+        Side effects: may upload images to Matrix if a tool returns a PNG path
+        and a `room_id` is provided.
+
+        Args:
+            messages: Chat history in OpenAI-compatible message dicts.
+            model: Optional override for the model to use.
+            room_id: Matrix room ID for optional image uploads.
+            tool_choice: Tool selection policy (e.g., "auto").
+
+        Returns:
+            The assistant's final message content (empty string on error).
+        """
         use_model = model or self.model
         data: Dict[str, Any] = {
             "model": use_model,
@@ -194,14 +263,19 @@ class AppContext:
                 try:
                     parsed = json.loads(tool_result)
                     path_value = None
-                    if isinstance(parsed, dict):
-                        path_value = parsed.get("result") or parsed.get("path")
-                    if isinstance(path_value, str) and path_value.lower().endswith(".png"):
-                        if room_id:
-                            try:
-                                await self.matrix.send_image(room_id=room_id, path=path_value, filename=None, log=self.logger.info)  # type: ignore
-                            except Exception:
-                                pass
+                    try:
+                        path_value = (parsed.get("result") or parsed.get("path"))
+                    except AttributeError:
+                        path_value = None
+                    try:
+                        if path_value and path_value.lower().endswith(".png"):
+                            if room_id:
+                                try:
+                                    await self.matrix.send_image(room_id=room_id, path=path_value, filename=None, log=self.logger.info)  # type: ignore
+                                except Exception:
+                                    pass
+                    except AttributeError:
+                        pass
                 except Exception:
                     pass
                 tool_msg: Dict[str, Any] = {"role": "tool", "content": str(tool_result), "tool_call_id": call["id"]}
@@ -219,7 +293,7 @@ class AppContext:
         final_msg = (result.get("choices", [{}])[0].get("message") or {})
         content = (final_msg.get("content") or "").strip()
         messages.append({"role": "assistant", "content": content})
-        messages[:] = [m for m in messages if not (m.get("role") == "tool" or (isinstance(m, dict) and m.get("tool_calls")))]
+        messages[:] = [m for m in messages if m.get("role") != "tool" and not m.get("tool_calls")]
         if len(messages) > self.cfg.llm.history_size:
             if messages and messages[0].get("role") == "system":
                 messages.pop(1)
@@ -229,6 +303,19 @@ class AppContext:
 
 
 async def run(cfg: AppConfig, config_path: Optional[str] = None) -> None:
+    """Run the Matrix bot runtime loop.
+
+    Sets up routing, logs in to Matrix, joins configured rooms, registers
+    device verification handlers, and starts syncing until interrupted.
+
+    Args:
+        cfg: Validated application configuration.
+        config_path: Optional path to the JSON config file used to persist
+            a discovered Matrix device ID.
+
+    Returns:
+        None. Completes when the sync loop ends or the process is stopped.
+    """
     ctx = AppContext(cfg)
 
     router = Router()
@@ -301,6 +388,18 @@ async def run(cfg: AppConfig, config_path: Optional[str] = None) -> None:
     join_time = _dt.datetime.now()
 
     async def on_text(room, event) -> None:
+        """Handle text messages arriving from Matrix rooms.
+
+        Ignores messages sent before the bot joined, messages from the bot
+        itself, and dispatches commands based on the registered router.
+
+        Args:
+            room: The Matrix room object.
+            event: The text message event object.
+
+        Returns:
+            None.
+        """
         try:
             message_time = getattr(event, "server_timestamp", 0) / 1000.0
             message_time = _dt.datetime.fromtimestamp(message_time)

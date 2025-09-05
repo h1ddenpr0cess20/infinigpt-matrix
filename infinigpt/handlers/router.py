@@ -15,10 +15,18 @@ class Router:
     """
 
     def __init__(self) -> None:
+        """Create a new, empty command router."""
         self._handlers: Dict[str, Callable] = {}
         self._admin_handlers: Dict[str, Callable] = {}
 
     def register(self, cmd: str, fn: Callable, admin: bool = False) -> None:
+        """Register a handler for a command prefix.
+
+        Args:
+            cmd: Command token (e.g., ".ai").
+            fn: Callable to invoke when dispatched.
+            admin: If True, only dispatch for admin users.
+        """
         if admin:
             self._admin_handlers[cmd] = fn
         else:
@@ -35,6 +43,21 @@ class Router:
         bot_name: Optional[str] = None,
         timestamp: Optional[_dt.datetime] = None,
     ) -> Tuple[Optional[Callable], Tuple]:
+        """Resolve an incoming message to a handler and arg tuple.
+
+        Args:
+            ctx: Application context object passed to handlers.
+            room_id: Matrix room ID.
+            sender_id: Matrix sender user ID.
+            sender_display: Display name for the sender.
+            text: Raw message text.
+            is_admin: Whether the sender is an admin.
+            bot_name: Optional bot name prefix to address without a dot command.
+            timestamp: Optional message timestamp.
+
+        Returns:
+            Tuple of (callable or None, args tuple) suitable for ``handler(*args)``.
+        """
         parts = text.strip().split()
         if not parts:
             return None, tuple()

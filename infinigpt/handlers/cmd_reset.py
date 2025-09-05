@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_reset(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Reset a user's history to stock or default prompt.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: "stock" to clear, else reset to default persona.
+    """
     stock = args.strip().lower() == "stock"
     # Match reference behavior: reset history; if not stock, seed default persona
     try:

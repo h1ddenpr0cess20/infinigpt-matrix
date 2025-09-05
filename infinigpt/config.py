@@ -10,6 +10,19 @@ from .exceptions import ConfigError
 
 @dataclass
 class MatrixConfig:
+    """Matrix client configuration values.
+
+    Attributes:
+        server: Homeserver URL.
+        username: Bot account user ID (e.g., @bot:server).
+        password: Account password.
+        channels: Rooms to join on startup.
+        admin: Legacy single admin user ID.
+        admins: List of admin user IDs.
+        device_id: Persisted device ID for E2EE.
+        store_path: Path for nio store files.
+        e2e: Whether to enable end-to-end encryption.
+    """
     server: str
     username: str
     password: str
@@ -24,6 +37,21 @@ class MatrixConfig:
 
 @dataclass
 class LLMConfig:
+    """LLM provider, model, and runtime settings.
+
+    Attributes:
+        models: Mapping of provider name to list of model IDs.
+        api_keys: Mapping of provider to API key.
+        default_model: Name of the default model.
+        personality: Default persona string joined with system prompt parts.
+        prompt: List of system prompt prefix/suffix (and optional extra).
+        options: Provider-agnostic chat options to merge when applicable.
+        history_size: Max messages kept per history thread.
+        ollama_url: Host:port for Ollama OpenAI-compatible API.
+        lmstudio_url: Host:port for LM Studio OpenAI-compatible API.
+        mcp_servers: Mapping of MCP server names to specs.
+        timeout: HTTP client timeout in seconds.
+    """
     models: Dict[str, List[str]]
     api_keys: Dict[str, str]
     default_model: str
@@ -39,12 +67,26 @@ class LLMConfig:
 
 @dataclass
 class AppConfig:
+    """Top-level application configuration container."""
     llm: LLMConfig
     matrix: MatrixConfig
     markdown: bool = True
 
 
 def _require(obj: dict, key: str, typ):
+    """Fetch and type-check a required key from a dict.
+
+    Args:
+        obj: Source mapping.
+        key: Required key name.
+        typ: Expected type or tuple of types.
+
+    Returns:
+        The value associated with ``key`` if present and of the right type.
+
+    Raises:
+        ConfigError: If the key is missing or of the wrong type.
+    """
     if key not in obj:
         raise ConfigError(f"Missing required config key: {key}")
     val = obj[key]
@@ -54,6 +96,14 @@ def _require(obj: dict, key: str, typ):
 
 
 def validate_config(cfg: AppConfig) -> Tuple[bool, List[str]]:
+    """Validate cross-field constraints and presence of required items.
+
+    Args:
+        cfg: Application configuration to validate.
+
+    Returns:
+        Tuple of (is_valid, error_messages).
+    """
     errors: List[str] = []
 
     # Validate default model exists among providers
@@ -77,9 +127,18 @@ def validate_config(cfg: AppConfig) -> Tuple[bool, List[str]]:
 
 
 def load_config(path: Optional[str] = None) -> AppConfig:
-    """Load `config.json` using this repo's schema.
+    """Load configuration from disk into an AppConfig.
 
-    - Preserves current structure; does not adopt other projects' schemas.
+    Preserves this repository's schema; does not adopt other projects' schemas.
+
+    Args:
+        path: Optional JSON path. Defaults to ``./config.json`` if omitted.
+
+    Returns:
+        Parsed and validated ``AppConfig`` instance.
+
+    Raises:
+        ConfigError: When required fields are missing or invalid.
     """
     config_path = Path(path) if path else Path("config.json")
     raw = json.loads(config_path.read_text())

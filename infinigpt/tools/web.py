@@ -4,6 +4,14 @@ import os
 
 
 def openai_search(query: str) -> str:
+    """Perform an OpenAI web search and return the raw JSON response.
+
+    Args:
+        query: Search query.
+
+    Returns:
+        JSON string response or a JSON-encoded error.
+    """
     url = "https://api.openai.com/v1/chat/completions"
     # Prefer env var, else read from config file path
     openai_key = os.environ.get("OPENAI_API_KEY")
@@ -70,6 +78,15 @@ def openai_search(query: str) -> str:
 
 
 def fetch_url(url: str, max_bytes: int = 65536) -> dict:
+    """Fetch a URL and return text content with truncation.
+
+    Args:
+        url: HTTP/HTTPS URL to fetch.
+        max_bytes: Maximum number of UTF-8 bytes to return.
+
+    Returns:
+        Dict with url, status, content, truncated flag; or error.
+    """
     try:
         with httpx.Client() as client:
             resp = client.get(url, timeout=20)

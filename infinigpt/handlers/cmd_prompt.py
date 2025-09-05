@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_persona(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Set a persona and seed a response for the user.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Persona string to apply.
+    """
     persona = args.strip()
     # Initialize a fresh system prompt using persona
     try:
@@ -18,6 +27,15 @@ async def handle_persona(ctx: Any, room_id: str, sender_id: str, sender_display:
 
 
 async def handle_custom(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Set a custom system prompt for the user and seed a response.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Custom system prompt text.
+    """
     custom = args.strip()
     if not custom:
         return
@@ -32,6 +50,7 @@ async def handle_custom(ctx: Any, room_id: str, sender_id: str, sender_display: 
 
 
 async def _respond(ctx: Any, room_id: str, user_id: str, header_display: str) -> None:
+    """Helper to request a reply for the current user and send it."""
     messages = ctx.history.get(room_id, user_id)
     try:
         data = {"model": ctx.model, "messages": messages}

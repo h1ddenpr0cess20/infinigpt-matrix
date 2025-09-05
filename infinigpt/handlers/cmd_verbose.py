@@ -4,6 +4,15 @@ from typing import Any
 
 
 async def handle_verbose(ctx: Any, room_id: str, sender_id: str, sender_display: str, args: str) -> None:
+    """Toggle or display the bot's verbose mode setting.
+
+    Args:
+        ctx: App context.
+        room_id: Matrix room ID.
+        sender_id: Matrix user ID.
+        sender_display: Sender display name.
+        args: Command argument: on/off/toggle/status.
+    """
     arg = (args or "").strip().lower()
     if arg in ("", "status"):
         state = "ON" if getattr(ctx, "verbose", False) else "OFF"
@@ -33,4 +42,3 @@ async def handle_verbose(ctx: Any, room_id: str, sender_id: str, sender_display:
     state = "ON" if ctx.verbose else "OFF"
     body = f"Verbose mode set to **{state}**"
     await ctx.matrix.send_text(room_id, body, html=ctx.render(body))
-
