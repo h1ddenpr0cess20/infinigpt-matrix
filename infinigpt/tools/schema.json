@@ -84,8 +84,7 @@
                     "product_id"
                 ],
                 "additionalProperties": false
-            },
-            "strict": false
+            }
         }
     },
     {
@@ -114,8 +113,7 @@
                     "prompt"
                 ],
                 "additionalProperties": false
-            },
-            "strict": false
+            }
         }
     },
     {
@@ -135,8 +133,7 @@
                     "prompt"
                 ],
                 "additionalProperties": false
-            },
-            "strict": false
+            }
         }
     },
     {
@@ -156,8 +153,7 @@
                     "prompt"
                 ],
                 "additionalProperties": false
-            },
-            "strict": false
+            }
         }
     },
     {
@@ -175,8 +171,8 @@
                 },
                 "required": ["query"],
                 "additionalProperties": false
-            },
-            "strict": false
+            }
+        
         }
     }
 ]

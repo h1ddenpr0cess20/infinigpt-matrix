@@ -148,7 +148,7 @@ class AppContext:
         self.logger.info("Tool (builtin): %s args=%s", name, _args_str)
         return execute_tool(name, arguments)
 
-    async def respond_with_tools(self, messages: List[Dict[str, Any]], *, model: Optional[str] = None, room_id: Optional[str] = None, tool_choice: str | None = "auto") -> str:
+    async def respond_with_tools(self, messages: List[Dict[str, Any]], *, model: Optional[str] = None, room_id: Optional[str] = None, tool_choice: str = "auto") -> str:
         use_model = model or self.model
         data: Dict[str, Any] = {
             "model": use_model,
@@ -156,8 +156,12 @@ class AppContext:
             "tools": self.tools_schema,
             "tool_choice": tool_choice,
         }
-        # if use_model not in self.cfg.llm.models.get("google", []):
-        #     data.update(self.options)
+        if (
+                    use_model not in self.cfg.llm.models.get("google", [])
+                    and use_model != "grok-4"
+                    and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
+                ):
+                    data.update(self.options)
         try:
             result = await self.llm.chat(data)
         except Exception:
@@ -209,7 +213,6 @@ class AppContext:
                     use_model not in self.cfg.llm.models.get("google", [])
                     and use_model != "grok-4"
                     and not (isinstance(use_model, str) and use_model.startswith("gpt-5-"))
-                    and not (isinstance(use_model, str) and use_model.startswith("o"))
                 ):
                     data.update(self.options)
                 result = await self.llm.chat(data)
