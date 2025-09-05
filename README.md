@@ -29,7 +29,7 @@ Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need th
 On the first run the script will register a device and save the `device_id` back
 into `config.json` so subsequent launches reuse the same device.
 
-Add your own tools to the `tools.py` file and add the schema to the `schema.json` file.
+Add your own tools under the `infinigpt/tools/` package and extend the schema in `infinigpt/tools/schema.json`.
 
 Current tools included:
 - crypto_prices: Fetches price info for a currency pair (e.g., BTC-USD)
@@ -38,8 +38,15 @@ Current tools included:
 - gemini_image: Generates images using Google Gemini image API
 - openai_search: Performs a web search using OpenAI's search model
 
+### MCP Tools
+
+InfiniGPT can also load tools exposed via the [Model Context Protocol](https://github.com/modelcontextprotocol).
+Define MCP servers under `llm.mcp_servers` in `config.json`. Each server entry
+should specify a command or URL. When configured, tools from these servers are
+merged with those in `schema.json` and can be invoked like any other tool.
+
 ```
-python infinigpt.py
+infinigpt-matrix --config config.json
 ```
 
 ## Use

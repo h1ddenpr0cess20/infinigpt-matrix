@@ -55,7 +55,8 @@
             "frequency_penalty": 0.5
         },
         "history_size": 24,
-        "ollama_url": "localhost:11434"
+        "ollama_url": "localhost:11434",
+        "mcp_servers": {}
     },
     "matrix": {
         "server": "https://matrix.org",

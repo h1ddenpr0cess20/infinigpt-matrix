@@ -1,3 +1,7 @@
 markdown
+requests
 httpx
 matrix-nio[e2e]
+fastmcp
+pytest
+pytest-asyncio
