@@ -1,85 +1,133 @@
 # infinigpt-matrix
-InfiniGPT is an AI chatbot for the [Matrix](https://matrix.org/) chat protocol, with a great prompt which allows it to roleplay as almost anything you can think of. It supports OpenAI, xAI, Google, Anthropic, Mistral, and Ollama models.  You can set any default personality you would like. It can be changed at any time, and each user has their own separate chat history with their chosen personality setting. Users can interact with each others chat histories for collaboration if they would like, but otherwise, conversations are separated, per channel, per user.  
 
-Also available for IRC at [infinigpt-irc](https://github.com/h1ddenpr0cess20/infinigpt-irc/)
+InfiniGPT is a powerful AI chatbot for the Matrix chat protocol that can roleplay as almost anything you can imagine. It supports multiple providers — OpenAI, xAI, Google, Mistral, Anthropic — and optional local models via Ollama. Each user has a separate conversation history per room, with dynamic personalities and admin controls for models and resets.
 
+Also available for IRC: <https://github.com/h1ddenpr0cess20/infinigpt-irc>  
+Ollama-only version at <https://github.com/h1ddenpr0cess20/ollamarama-matrix>
 
-## Setup
+## Documentation
 
+- [Overview](docs/index.md)
+- [Getting Started](docs/getting-started.md)
+- [Configuration](docs/configuration.md)
+- [Commands](docs/commands.md)
+- [Tools & MCP](docs/tools-and-mcp.md)
+- [Images Directory](docs/images.md)
+- [Docker](docs/docker.md)
+- [CLI Reference](docs/cli.md)
+- [Operations & E2E](docs/operations.md)
+- [Architecture](docs/architecture.md)
+- [LM Studio Setup](docs/lm-studio.md)
+- [Development](docs/development.md)
+- [Migration](docs/migration.md)
+- [Legacy Map](docs/legacy-map.md)
+- [Security](docs/security.md)
+- [Not a Companion](docs/not-a-companion.md)
+- [AI Output Disclaimer](docs/ai-output-disclaimer.md)
+
+## Features
+
+- Dynamic personalities with quick switching
+- Per‑user history, isolated per room and user
+- Collaborative mode to talk across histories
+- Multi‑provider LLMs with unified model selection
+- Tool calling (builtin and MCP) for actions and lookups
+- Admin controls for model switching and global resets
+
+## Installation
+
+From source (installs CLI):
+
+- `pip install .`
+- Or use pipx: `pipx install .`
+
+From source without installing the package:
+
+- `pip install -r requirements.txt`
+- Run with: `python -m infinigpt --config config.json`
+
+After installation, use the `infinigpt-matrix` command.
+
+## Quick Start
+
+1) Create a Matrix account for the bot and note the server URL, username, and password.
+2) Choose providers. For cloud providers, set API keys via env or `config.json`. For local models, install [Ollama](https://ollama.com/):
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen3
 ```
-pip install -r requirements.txt
+
+3) Create `config.json`. See [Configuration](docs/configuration.md) for full schema. Minimal example:
+
+```json
+{
+  "matrix": {
+    "server": "https://matrix.org",
+    "username": "@your_bot:matrix.org",
+    "password": "…",
+    "channels": ["#your-room:matrix.org"],
+    "admins": ["@admin:matrix.org"],
+    "store_path": "store",
+    "e2e": true
+  },
+  "llm": {
+    "models": {
+      "openai": ["gpt-4o", "gpt-4o-mini"],
+      "lmstudio": ["openai/gpt-oss-20b", "qwen/qwen3-8b"],
+      "xai": ["grok-3-mini"],
+      "google": ["gemini-2.0-flash"],
+      "mistral": [],
+      "anthropic": [],
+      "ollama": ["qwen3"]
+    },
+    "api_keys": {"openai": "…", "xai": "…", "google": "…"},
+    "default_model": "gpt-4o",
+    "personality": "a helpful assistant",
+    "prompt": ["you are ", "."],
+    "options": {"temperature": 0.8},
+    "history_size": 24,
+    "ollama_url": "localhost:11434",
+    "lmstudio_url": "localhost:1234",
+    "mcp_servers": {}
+  }
+}
 ```
 
+4) Run:
 
-Get API keys for each of the LLM providers you would like to use.  Add those to config.json.
+- Installed command: `infinigpt-matrix --config config.json`
+- As module: `python -m infinigpt --config config.json`
 
-Edit the model lists in the config to contain only the models you want to use.  
+## Usage
 
-If you want to use local models, you'll first need to install and familiarize yourself with [Ollama](https://ollama.com/), make sure you can run local LLMs, etc.  If you can't, don't worry about it, you can just omit these models from the config.  
+Common commands (see [Commands](docs/commands.md) for the full list):
 
-You can install and update it with this command:
-```
-curl https://ollama.com/install.sh | sh
-```
-
-[Download the models](https://ollama.com/search) you want to use and replace the ones I've included as examples in the config.  
-
-
-Set up a [Matrix account](https://app.element.io/) for your bot.  You'll need the server, username and password.  Add those to the config.json file.
-On the first run the script will register a device and save the `device_id` back
-into `config.json` so subsequent launches reuse the same device.
-
-Add your own tools to the `tools.py` file and add the schema to the `schema.json` file.
-
-Current tools included:
-- crypto_prices: Fetches price info for a currency pair (e.g., BTC-USD)
-- openai_image: Generates images using OpenAI's image API
-- grok_image: Generates images using xAI (Grok) image API
-- gemini_image: Generates images using Google Gemini image API
-- openai_search: Performs a web search using OpenAI's search model
-
-```
-python infinigpt.py
-```
-
-## Use
-
-**.ai _message_ or botname: _message_**  
-    Basic usage.
-  
-**.x _user message_**  
-    This allows you to talk to another user's chat history.  
-    _user_ is the display name of the user whose history you want to use
-      
-**.persona _personality_**  
-    Changes the personality.  It can be a character, personality type, object, idea, etc. Don't use a custom system prompt here.
-
-**.custom _prompt_**  
-    Allows use of a custom system prompt instead of the built-in one
-
-**.reset**  
-    Reset to preset personality
-    
-**.stock**  
-    Remove personality and reset to standard GPT settings
-
-**.model**  
-    List available large language models
-
-**.model _modelname_**  
-    Change model
-    
-**.mymodel**  
-    List available large language models for yourself and show your current model
-
-**.mymodel _modelname_**  
-    Change your model (only affects your own responses)
-
-**.help**
-    Show the built-in help menu
+| Command | Description | Example |
+|---------|-------------|---------|
+| `.ai <message>` or `BotName: <message>` | Chat with the AI | `.ai Hello there!` |
+| `.x <user> <message>` | Continue another user's conversation | `.x Alice What did we discuss?` |
+| `.persona <text>` | Change your personality | `.persona helpful librarian` |
+| `.custom <prompt>` | Use a custom system prompt | `.custom You are a coding expert` |
+| `.reset` / `.stock` | Clear history (default/stock prompt) | `.reset` |
+| `.mymodel [name]` | Show/change personal model | `.mymodel gpt-4o-mini` |
+| `.model [name|reset]` (admin) | Show/change model | `.model qwen3` |
+| `.clear` (admin) | Reset globally for all users | `.clear` |
+| `.help` | Show inline help | `.help` |
 
 ## Encryption Support
 
-- This bot supports end-to-end encryption (E2E) in Matrix rooms using `matrix-nio[e2e]` and a built-in device verification system.
-- You must have `libolm` installed and available to Python for E2E to work.
-- On Windows, you need to build and install `libolm` from source for encryption support. If you do not need encrypted rooms or have issues with `libolm`, use the files in the `no-e2e/` folder.
+- Works in encrypted Matrix rooms using `matrix-nio[e2e]` with device verification.
+- Requires `libolm` available to Python for E2E. If unavailable, you can run without E2E; see [Operations](docs/operations.md) and [Verification](docs/verification.md).
+- Persist the `store/` directory to retain device keys and encryption state.
+
+## Community & Policies
+
+- Code of Conduct: [Code of Conduct](CODE_OF_CONDUCT.md)
+- Contributing: [Contributing](CONTRIBUTING.md)
+- Security Policy: [Security Policy](SECURITY.md)
+- Security Guide: [Security Guide](docs/security.md)
+
+## License
+
+AGPL‑3.0 — see [License](LICENSE) for details.

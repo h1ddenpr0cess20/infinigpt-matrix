@@ -1,0 +1,178 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather for a city using Open-Meteo.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name, e.g., 'Tokyo' or 'San Francisco'."},
+                    "units": {"type": "string", "enum": ["metric", "imperial"], "description": "Units: metric (°C, km/h) or imperial (°F, mph)."}
+                },
+                "required": ["city"],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculate_expression",
+            "description": "Safely evaluate a basic arithmetic expression.",
+            "parameters": {
+                "type": "object",
+                "properties": {"expression": {"type": "string", "description": "Arithmetic expression using +, -, *, /, and parentheses."}},
+                "required": ["expression"],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_time",
+            "description": "Get the current time. Supports 'UTC', 'local', or IANA timezone names if available.",
+            "parameters": {
+                "type": "object",
+                "properties": {"timezone_name": {"type": "string", "description": "Timezone: 'UTC', 'local', or IANA name like 'America/New_York'."}},
+                "required": [],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "text_stats",
+            "description": "Return counts of words, characters, and sentences in the text.",
+            "parameters": {
+                "type": "object",
+                "properties": {"text": {"type": "string", "description": "The text to analyze."}},
+                "required": ["text"],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_url",
+            "description": "Fetch text content from an HTTP(S) URL.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "The URL to retrieve."}, "max_bytes": {"type": "integer", "description": "Maximum number of bytes to return (default 65536)."}},
+                "required": ["url"],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crypto_prices",
+            "description": "Fetches price info for a currency pair, eg BTC-USD.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "description": "The currency pair for which the information is being fetched."
+                    }
+                },
+                "required": [
+                    "product_id"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "openai_image",
+            "description": "Generates an image using OpenAI's gpt-image-1 image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    },
+                    "quality": {
+                        "type": "string",
+                        "description": "The quality of the image to generate.  Default is 'medium'.",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ]
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "grok_image",
+            "description": "Generates an image using xAI (Grok) image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "gemini_image",
+            "description": "Generates an image using Google Gemini image generation API.  Do not use more than once per prompt.  Always generate images after all other tool calls have completed and use their data if requested.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "A text description of the image to generate, formulated from the user's request and conversation context.  Do not mention the filename in your response."
+                    }
+                },
+                "required": [
+                    "prompt"
+                ],
+                "additionalProperties": false
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "openai_search",
+            "description": "Performs a web search using OpenAI's gpt-4o-mini-search-preview model and returns structured search results.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query to execute formulated from the user's request and conversation context"
+                    }
+                },
+                "required": ["query"],
+                "additionalProperties": false
+            }
+        
+        }
+    }
+]

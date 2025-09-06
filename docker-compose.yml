@@ -1,0 +1,14 @@
+services:
+  infinigpt:
+    build: .
+    environment:
+      - OPENAI_API_KEY
+      - XAI_API_KEY
+      - GOOGLE_API_KEY
+      - MISTRAL_API_KEY
+      - ANTHROPIC_API_KEY
+    volumes:
+      - ./config.json:/data/config.json:ro
+      - ./store:/data/store
+      - ./images:/data/images
+    command: ["infinigpt-matrix", "--config", "/data/config.json", "--store-path", "/data/store", "--log-level", "INFO"]

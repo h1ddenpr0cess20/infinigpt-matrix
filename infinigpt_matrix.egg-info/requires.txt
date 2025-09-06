@@ -1,0 +1,5 @@
+matrix-nio[e2e]
+httpx
+markdown
+rich
+fastmcp

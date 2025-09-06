@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infinigpt-matrix"
+version = "0.1.0"
+description = "InfiniGPT Matrix bot (modular)"
+requires-python = ">=3.10"
+dependencies = [
+  "matrix-nio[e2e]",
+  "httpx",
+  "markdown",
+  "rich",
+  "fastmcp"
+]
+
+[project.scripts]
+infinigpt-matrix = "infinigpt.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["infinigpt*"]
+exclude = ["tests*", "store*", "no-e2e*"]
+
+[tool.setuptools.package-data]
+infinigpt = [
+  "tools/schema.json",
+]
