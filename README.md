@@ -17,6 +17,7 @@ Ollama-only version at <https://github.com/h1ddenpr0cess20/ollamarama-matrix>
 - [CLI Reference](docs/cli.md)
 - [Operations & E2E](docs/operations.md)
 - [Architecture](docs/architecture.md)
+- [Ollama Setup](docs/ollama.md)
 - [LM Studio Setup](docs/lm-studio.md)
 - [Development](docs/development.md)
 - [Migration](docs/migration.md)
