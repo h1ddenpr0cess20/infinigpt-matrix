@@ -1,6 +1,6 @@
 # infinigpt-matrix
 
-InfiniGPT is a powerful AI chatbot for the Matrix chat protocol that can roleplay as almost anything you can imagine. It supports multiple providers — OpenAI, xAI, Google, Mistral, Anthropic — and optional local models via Ollama. Each user has a separate conversation history per room, with dynamic personalities and admin controls for models and resets.
+InfiniGPT is a powerful AI chatbot for the Matrix chat protocol that can roleplay as almost anything you can imagine. It supports multiple providers — OpenAI, xAI, Google, Mistral, Anthropic — and optional local models via Ollama and LM Studio. Each user has a separate conversation history per room, with dynamic personalities and admin controls for models and resets.
 
 Also available for IRC: <https://github.com/h1ddenpr0cess20/infinigpt-irc>  
 Ollama-only version at <https://github.com/h1ddenpr0cess20/ollamarama-matrix>
@@ -52,49 +52,8 @@ After installation, use the `infinigpt-matrix` command.
 ## Quick Start
 
 1) Create a Matrix account for the bot and note the server URL, username, and password.
-2) Choose providers. For cloud providers, set API keys via env or `config.json`. For local models, install [Ollama](https://ollama.com/):
-
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen3
-```
-
-3) Create `config.json`. See [Configuration](docs/configuration.md) for full schema. Minimal example:
-
-```json
-{
-  "matrix": {
-    "server": "https://matrix.org",
-    "username": "@your_bot:matrix.org",
-    "password": "…",
-    "channels": ["#your-room:matrix.org"],
-    "admins": ["@admin:matrix.org"],
-    "store_path": "store",
-    "e2e": true
-  },
-  "llm": {
-    "models": {
-      "openai": ["gpt-4o", "gpt-4o-mini"],
-      "lmstudio": ["openai/gpt-oss-20b", "qwen/qwen3-8b"],
-      "xai": ["grok-3-mini"],
-      "google": ["gemini-2.0-flash"],
-      "mistral": [],
-      "anthropic": [],
-      "ollama": ["qwen3"]
-    },
-    "api_keys": {"openai": "…", "xai": "…", "google": "…"},
-    "default_model": "gpt-4o",
-    "personality": "a helpful assistant",
-    "prompt": ["you are ", "."],
-    "options": {"temperature": 0.8},
-    "history_size": 24,
-    "ollama_url": "localhost:11434",
-    "lmstudio_url": "localhost:1234",
-    "mcp_servers": {}
-  }
-}
-```
-
+2) Choose providers. For cloud providers, set API keys via env or `config.json`. For local models, install [Ollama](/docs/ollama.md) or [LM Studio](/docs/lm-studio.md)
+3) Create `config.json`. See [Configuration](docs/configuration.md) for full schema
 4) Run:
 
 - Installed command: `infinigpt-matrix --config config.json`
