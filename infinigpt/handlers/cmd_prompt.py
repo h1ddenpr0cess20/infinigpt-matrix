@@ -70,7 +70,7 @@ async def _respond(ctx: Any, room_id: str, user_id: str, header_display: str) ->
         try:
             thinking, rest = response_text.split("</think>", 1)
             thinking = thinking.replace("<think>", "").strip()
-            response_text = rest
+            response_text = rest.strip()
             try:
                 ctx.log(f"Model thinking for {header_display} ({user_id}): {thinking}")
             except Exception:
@@ -82,7 +82,7 @@ async def _respond(ctx: Any, room_id: str, user_id: str, header_display: str) ->
             parts = response_text.split("<|end_of_thought|>")
             if len(parts) > 1:
                 thinking = parts[0].replace("<|begin_of_thought|>", "").replace("<|end_of_thought|>", "").strip()
-                response_text = parts[1]
+                response_text = parts[1].strip()
                 try:
                     ctx.log(f"Model thinking for {header_display} ({user_id}): {thinking}")
                 except Exception:

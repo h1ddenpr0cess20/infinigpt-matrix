@@ -43,7 +43,7 @@ async def handle_ai(ctx: Any, room_id: str, sender_id: str, sender_display: str,
             thinking, rest = text.split("</think>", 1)
             thinking = thinking.replace("<think>", "").strip()
             ctx.log(f"Model thinking for {sender_display} ({sender_id}): {thinking}")
-            text = rest
+            text = rest.strip()
         except Exception:
             pass
     if "<|begin_of_thought|>" in text and "<|end_of_thought|>" in text:
@@ -52,7 +52,7 @@ async def handle_ai(ctx: Any, room_id: str, sender_id: str, sender_display: str,
             if len(parts) > 1:
                 thinking = parts[0].replace("<|begin_of_thought|>", "").replace("<|end_of_thought|>", "").strip()
                 ctx.log(f"Model thinking for {sender_display} ({sender_id}): {thinking}")
-                text = parts[1]
+                text = parts[1].strip()
         except Exception:
             pass
     if "<|begin_of_solution|>" in text and "<|end_of_solution|>" in text:
