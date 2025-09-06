@@ -2,26 +2,28 @@
 
 InfiniGPT is a powerful AI chatbot for the Matrix chat protocol that can roleplay as almost anything you can imagine. It supports multiple providers — OpenAI, xAI, Google, Mistral, Anthropic — and optional local models via Ollama. Each user has a separate conversation history per room, with dynamic personalities and admin controls for models and resets.
 
-Also available for IRC: https://github.com/h1ddenpr0cess20/infinigpt-irc
+Also available for IRC: <https://github.com/h1ddenpr0cess20/infinigpt-irc>  
+Ollama-only version at <https://github.com/h1ddenpr0cess20/ollamarama-matrix>
 
 ## Documentation
 
-- Overview: `docs/index.md`
-- Getting Started: `docs/getting-started.md`
-- Configuration: `docs/configuration.md`
-- Commands: `docs/commands.md`
-- Tools & MCP: `docs/tools-and-mcp.md`
-- Images Directory: `docs/images.md`
-- Docker: `docs/docker.md`
-- CLI Reference: `docs/cli.md`
-- Operations & E2E: `docs/operations.md`
-- Architecture: `docs/architecture.md`
-- LM Studio Setup: `docs/lm-studio.md`
-- Development: `docs/development.md`
-- Migration & Legacy Map: `docs/migration.md`, `docs/legacy-map.md`
-- Security: `docs/security.md`
-- Not a Companion: `docs/not-a-companion.md`
-- AI Output Disclaimer: `docs/ai-output-disclaimer.md`
+- [Overview](docs/index.md)
+- [Getting Started](docs/getting-started.md)
+- [Configuration](docs/configuration.md)
+- [Commands](docs/commands.md)
+- [Tools & MCP](docs/tools-and-mcp.md)
+- [Images Directory](docs/images.md)
+- [Docker](docs/docker.md)
+- [CLI Reference](docs/cli.md)
+- [Operations & E2E](docs/operations.md)
+- [Architecture](docs/architecture.md)
+- [LM Studio Setup](docs/lm-studio.md)
+- [Development](docs/development.md)
+- [Migration](docs/migration.md)
+- [Legacy Map](docs/legacy-map.md)
+- [Security](docs/security.md)
+- [Not a Companion](docs/not-a-companion.md)
+- [AI Output Disclaimer](docs/ai-output-disclaimer.md)
 
 ## Features
 
@@ -56,7 +58,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen3
 ```
 
-3) Create `config.json`. See `docs/configuration.md` for full schema. Minimal example:
+3) Create `config.json`. See [Configuration](docs/configuration.md) for full schema. Minimal example:
 
 ```json
 {
@@ -99,7 +101,7 @@ ollama pull qwen3
 
 ## Usage
 
-Common commands (see `docs/commands.md` for the full list):
+Common commands (see [Commands](docs/commands.md) for the full list):
 
 | Command | Description | Example |
 |---------|-------------|---------|
@@ -116,16 +118,16 @@ Common commands (see `docs/commands.md` for the full list):
 ## Encryption Support
 
 - Works in encrypted Matrix rooms using `matrix-nio[e2e]` with device verification.
-- Requires `libolm` available to Python for E2E. If unavailable, you can run without E2E; see `docs/operations.md` and `docs/verification.md`.
+- Requires `libolm` available to Python for E2E. If unavailable, you can run without E2E; see [Operations](docs/operations.md) and [Verification](docs/verification.md).
 - Persist the `store/` directory to retain device keys and encryption state.
 
 ## Community & Policies
 
-- Code of Conduct: `CODE_OF_CONDUCT.md`
-- Contributing: `CONTRIBUTING.md`
-- Security Policy: `SECURITY.md`
-- Security Guide: `docs/security.md`
+- Code of Conduct: [Code of Conduct](CODE_OF_CONDUCT.md)
+- Contributing: [Contributing](CONTRIBUTING.md)
+- Security Policy: [Security Policy](SECURITY.md)
+- Security Guide: [Security Guide](docs/security.md)
 
 ## License
 
-AGPL‑3.0 — see `LICENSE` for details.
+AGPL‑3.0 — see [License](LICENSE) for details.
