@@ -43,6 +43,8 @@ docker run --rm -it \
   -e GOOGLE_API_KEY \
   -e MISTRAL_API_KEY \
   -e ANTHROPIC_API_KEY \
+  -e DEEPSEEK_API_KEY \
+  -e QWEN_API_KEY \
   infinigpt-matrix:latest
 ```
 
@@ -65,6 +67,8 @@ services:
       - GOOGLE_API_KEY
       - MISTRAL_API_KEY
       - ANTHROPIC_API_KEY
+      - DEEPSEEK_API_KEY
+      - QWEN_API_KEY
     volumes:
       - ./config.json:/data/config.json:ro
       - ./store:/data/store
