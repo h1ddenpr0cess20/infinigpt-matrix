@@ -1,5 +1,6 @@
 services:
   infinigpt:
+    container_name: infinigpt-matrix
     image: infinigpt-matrix:latest
     user: "YOUR UID:YOUR GID"
     environment:
