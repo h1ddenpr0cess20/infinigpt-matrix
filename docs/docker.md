@@ -60,7 +60,8 @@ An example compose service:
 ```yaml
 services:
   infinigpt:
-    build: .
+    image: infinigpt-matrix:latest
+    container_name: infinigpt-matrix
     environment:
       - OPENAI_API_KEY
       - XAI_API_KEY
