@@ -30,6 +30,11 @@ def resolve_provider(model: str, cfg: AppConfig) -> Tuple[str, str]:
         return ("https://api.mistral.ai/v1", llm.api_keys.get("mistral", ""))
     if model in llm.models.get("anthropic", []):
         return ("https://api.anthropic.com/v1", llm.api_keys.get("anthropic", ""))
+    if model in llm.models.get("deepseek", []):
+        return ("https://api.deepseek.com/v1", llm.api_keys.get("deepseek", ""))
+    # if you are using qwen singapore API，you should use "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    if model in llm.models.get("qwen", []):
+        return ("https://dashscope.aliyuncs.com/compatible-mode/v1", llm.api_keys.get("qwen", ""))
     if model in llm.models.get("ollama", []):
         return (f"http://{llm.ollama_url}/v1", "hello_friend")
     if model in llm.models.get("lmstudio", []):
