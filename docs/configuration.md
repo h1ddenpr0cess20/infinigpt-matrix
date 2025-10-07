@@ -30,7 +30,7 @@ InfiniGPT reads a JSON configuration file (default `./config.json`). You can ove
 
 Tools prefer environment variables for provider auth. If not set, values in `llm.api_keys` are used.
 
-- `OPENAI_API_KEY`, `XAI_API_KEY`, `GOOGLE_API_KEY`, `MISTRAL_API_KEY`, `ANTHROPIC_API_KEY`,`DEEPSEEK_API_KEY`,"QWEN_API_KEY"
+- `OPENAI_API_KEY`, `XAI_API_KEY`, `GOOGLE_API_KEY`, `MISTRAL_API_KEY`, `ANTHROPIC_API_KEY`,`DEEPSEEK_API_KEY`,`QWEN_API_KEY`
 - `INFINIGPT_LOG_LEVEL` — default CLI log level
 - The CLI also exports `INFINIGPT_CONFIG` (path to the active config) so tools can read consistent settings.
 
