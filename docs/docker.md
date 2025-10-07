@@ -61,6 +61,7 @@ An example compose service:
 services:
   infinigpt:
     image: infinigpt-matrix:latest
+    user: "YOUR UID:YOUR GID"
     container_name: infinigpt-matrix
     environment:
       - OPENAI_API_KEY
