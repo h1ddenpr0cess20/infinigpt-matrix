@@ -43,6 +43,8 @@ docker run --rm -it \
   -e GOOGLE_API_KEY \
   -e MISTRAL_API_KEY \
   -e ANTHROPIC_API_KEY \
+  -e DEEPSEEK_API_KEY \
+  -e QWEN_API_KEY \
   infinigpt-matrix:latest
 ```
 
@@ -58,13 +60,17 @@ An example compose service:
 ```yaml
 services:
   infinigpt:
-    build: .
+    image: infinigpt-matrix:latest
+    user: "YOUR UID:YOUR GID"
+    container_name: infinigpt-matrix
     environment:
       - OPENAI_API_KEY
       - XAI_API_KEY
       - GOOGLE_API_KEY
       - MISTRAL_API_KEY
       - ANTHROPIC_API_KEY
+      - DEEPSEEK_API_KEY
+      - QWEN_API_KEY
     volumes:
       - ./config.json:/data/config.json:ro
       - ./store:/data/store
