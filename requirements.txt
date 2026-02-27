@@ -3,3 +3,4 @@ httpx
 matrix-nio[e2e]
 rich
 fastmcp
+pytest-asyncio

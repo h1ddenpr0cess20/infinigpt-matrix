@@ -13,23 +13,41 @@ async def handle_x(ctx: Any, room_id: str, sender_id: str, sender_display: str, 
         sender_display: Sender display name.
         args: "<display|@user:server> <message>".
     """
-    parts = (args or "").split()
-    if len(parts) < 2:
+    raw = (args or "").strip()
+    if not raw:
         return
-    target_display = parts[0]
-    message = " ".join(parts[1:])
 
     target_user = None
-    if target_display.startswith("@") and ":" in target_display:
-        target_user = target_display
-    else:
+    message = ""
+
+    # Explicit mxid target: ``.x @user:server message``
+    if raw.startswith("@"):
+        parts = raw.split(maxsplit=1)
+        if len(parts) < 2:
+            return
+        possible_user, rest = parts
+        if ":" in possible_user:
+            target_user = possible_user
+            message = rest
+
+    # Display-name target (supports spaces): choose the longest matching name
+    if not target_user:
+        candidates = []
         for user in list(ctx.history.messages.get(room_id, {}).keys()):  # type: ignore[attr-defined]
             name = await ctx.matrix.display_name(user)
-            if name == target_display:
-                target_user = user
-                break
-    if not target_user:
-        return
+            if not name:
+                continue
+            if raw == name:
+                candidates.append((len(name), user, name, ""))
+            elif raw.startswith(f"{name} "):
+                candidates.append((len(name), user, name, raw[len(name) + 1 :]))
+
+        if not candidates:
+            return
+        _, target_user, _, message = max(candidates, key=lambda c: c[0])
+        if not message:
+            return
+
     ctx.history.add(room_id, target_user, "user", message)
     messages = ctx.history.get(room_id, target_user)
     # Per-target model override

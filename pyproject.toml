@@ -29,3 +29,9 @@ exclude = ["tests*", "store*", "no-e2e*"]
 infinigpt = [
   "tools/schema.json",
 ]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-asyncio",
+]
