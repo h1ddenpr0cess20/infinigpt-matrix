@@ -30,11 +30,12 @@ mkdir -p store
 cp config.json ./config.json  # ensure it contains Matrix creds, rooms, models
 ```
 
-2) Run the container:
+2) Run the container with `--network host` so it can reach any local MCP servers on the host:
 
 ```bash
 docker run --rm -it \
   --name infinigpt \
+  --network host \
   -v "$(pwd)/config.json":/data/config.json:ro \
   -v "$(pwd)/store":/data/store \
   -v "$(pwd)/images":/data/images \
@@ -50,6 +51,7 @@ docker run --rm -it \
 
 Notes:
 
+- `--network host` shares the host's network stack with the container, so `localhost` URLs in your config (MCP servers, etc.) work directly.
 - The bot does not expose ports; it connects out to Matrix and any providers you configure.
 - Persist `/data/store` to retain device keys for E2E rooms.
 
@@ -63,6 +65,7 @@ services:
     image: infinigpt-matrix:latest
     user: "YOUR UID:YOUR GID"
     container_name: infinigpt-matrix
+    network_mode: host
     environment:
       - OPENAI_API_KEY
       - XAI_API_KEY
