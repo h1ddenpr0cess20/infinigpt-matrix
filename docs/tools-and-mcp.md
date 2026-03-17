@@ -72,9 +72,14 @@ Behavior notes:
 - If a server is defined with `command`/`args`, stderr is silenced; stdout is preserved for MCP stdio.
 - Duplicate names: MCP tools override built‑in tools with the same name.
 
+### Docker
+
+When running in Docker, use `--network host` so the container can reach MCP servers on localhost. See [Docker](docker.md) for details. Stdio/command‑based MCP servers require the binary to be installed in the container image; prefer URL‑based servers when running in Docker.
+
 ## Troubleshooting
 
 - Model never calls tools: ensure your model supports tool/function calling and that tools appear in logs at startup (use `-L DEBUG`).
 - HTTP/network errors from tools: check your environment’s network and any proxies/firewalls. MCP servers must be reachable.
+- MCP tools not loading in Docker: make sure you’re using `--network host`. See [Docker](docker.md).
 - Built‑in tool not found: confirm the function name in `schema.json` matches the Python function name and module is importable.
 
